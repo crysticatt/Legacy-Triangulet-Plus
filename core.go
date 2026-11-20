@@ -54,7 +54,7 @@ type Config struct {
 	StopAfterMystical int       `json:"stopAfterMystical"` // stop opening after this many Mysticals in one run (0 = never)
 	AlertSound        bool      `json:"alertSound"`
 	Accounts          []Account `json:"accounts"`      // saved logins to switch between
-	UpdateRepo        string    `json:"updateRepo"`    // GitHub owner/repo to check for new versions (empty = the default)
+	UpdateRepo        string    `json:"updateRepo"`    // GitHub owner/repo to check for new versions (empty = default)
 	NoUpdateCheck     bool      `json:"noUpdateCheck"` // never look for updates
 	AlertLowPacks     int       `json:"alertLowPacks"` // warn when fewer than this many packs are left (0 = off)
 }

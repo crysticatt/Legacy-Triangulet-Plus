@@ -1,97 +1,105 @@
-# triangulet opener
+# Triangulet Opener
 
-**open capsules on [legacy triangulet](https://tri.pengpowers.xyz) 24/8, from the system tray, even before you sign in to your computer.**
+**Open capsules on [legacy Triangulet](https://tri.pengpowers.xyz) around the clock, from the system tray, even before you sign in to Windows.**
 
-really fast (around **12 packs per second, over 1 million packs a day**), really quiet (lives in the tray + low cpu usage), and smart (hunts the capsules with the best mystical odds). one tiny `.exe`, no installer.
+Fast (around **12 packs per second, over 1 million packs a day** on the author's setup), quiet (lives in the tray), and smart (hunts the capsules with the best Mystical odds). Windows installer or a single portable `.exe`, plus a Mac version.
 
-> **unofficial.** this is a fan-made tool and is not affiliated with triangulet or pengpowers. it sends requests to the site as your account. opening very fast, or with many workers, might get your account banned. use it at your own risk.
-
----
-
-## download
-
-get **`trianguletopener.exe`** from the [latest release](../../releases/latest). extract and run it. windows 10 or 11, 64-bit.
-
-windows smartscreen may say "unknown publisher" the first time, because the file is not code-signed. choose **more info**, then **run anyway**.
-
-## quick start
-
-1. run `trianguletopener.exe`.
-2. type your triangulet username and password and press **save and log in**.
-3. pick a mode (try **hunt**) and press **start opening**.
-4. close the window. it hides in the system tray and keeps opening. click the tray icon to bring the window back, right click for the quick menu.
+> **Unofficial.** This is a fan-made tool and is not affiliated with Triangulet or its owner. It sends requests to the site as your account. Opening very fast, or with many workers, may get an account limited or banned. You use it at your own risk.
 
 ---
 
-## highlights
+## Download
 
-### real fast!!!
-- **about 17 packs per second, over 1.5 million a day** your speed depends on your connection, site, settings and server delay.
-- up to **16 workers**, each with several requests in flight at once ("at once"), sharing one warm connection pool.
-- small delay between pulls down to **0.000001 ms**.
-- **no rate-limit waiting**: a "slow down" reply just tries again right away.
-- **test limits** finds a good workers x at once setting for your connection by reading from the site.  *no coins spent*
-- stops **exactly** when your coins can't pay for another capsule
+Get these from the [latest release](../../releases/latest). The version is in every file name (for example `v36`).
 
-### starts before windows does
-normally windows only runs startup apps after you unlock your pc. this app can do better:
-- **run at startup**: starts hidden in the tray when you sign in and begins opening right away.
-- **before sign-in**: creates a scheduled task that opens capsules at boot, **before you unlock windows**. turn it on with a switch in the ui (windows asks for admin approval once). when you sign in, the normal app takes over smoothly. there is no tray icon or discord status until you sign in.
-- if the login token expires or fails, it logs in again every 10 seconds until it works. it never gives up on its own (a wrong password is the one exception, and it tells you).
+| System | File | What it is |
+|---|---|---|
+| Windows 10/11 | `TrianguletOpener-Setup-vNN.exe` | **Installer.** Puts the app in your account, adds Desktop and Start Menu shortcuts and an uninstall entry. No admin needed. |
+| Windows | `TrianguletOpener-vNN.exe` | Portable: runs from any folder, no install. |
+| Mac | `TrianguletOpener-Mac-vNN.zip` | Both Apple Silicon and Intel apps plus an install script. See the Mac notes inside. |
 
-### discord presence
-show your friends what you're doing: **"opening capsules"** appears as your discord activity while the opener runs.
-- needs the discord desktop app open on the same pc.
-- turn it on or off with `discordon` in `config.json`.
-- to show the logo, upload `triangulet-logo.png` as an art asset named **`logo`** in your own discord application and put its application id in `discordid`. a default is built in.
-- optional **webhook**: put a discord webhook url in `webhookurl` to get a message in a channel whenever you pull a chroma or a mystical.
+Windows SmartScreen may say "unknown publisher" the first time, because the file is not code-signed. Choose **More info**, then **Run anyway**. On a Mac, right-click the install script (or the app) and choose **Open** the first time.
 
-### hunting
-- **fixed**: every worker opens the capsule you pick.
-- **next on mystical**: after a mystical, moves on to the next capsule in the list.
-- **hunt**: aims workers at the capsule with the best mystical odds. *focus* puts every worker on the best one; *split 2/3/4* spreads them over the top capsules. *chase ones i don't own* goes after mysticals you are missing. *stop after n mysticals* ends the run for you.
+The Mac version has no window of its own: it runs in the background and shows a dashboard in your browser with the same controls.
 
-### know what you have
-- **trians**: your real inventory, an owned / missing switch, a collection progress bar, and search.
-- **log**: every epic-or-better pull and every new trian, also saved to `pull-log.csv`.
-- **history**: capsules per hour or day, mystical and chroma markers, and your coins over 24 h / 7 days / 30 days.
-- **stats** and **hunt** tabs: live pulls-per-minute graph, rarity bars, packs left, packs since your last mystical, measured "1 in n".
-- **auction**: list trians for sale.
-- **alerts**: sound and tray notice for rare pulls, goal reached, low packs, out of coins, or a wrong login.
+## Quick start
 
-### more
-- **multiple accounts**: save several logins and switch with `<` `>`. opening restarts on the new account if it was running.
-- **updates**: checks this repo's latest release and shows an **update** button when there is a newer version. it downloads only from github and checks the file against github's checksum before installing. turn the check off with `"noupdatecheck": true` in `config.json`.
-- resizable 16:9 window that hides to the tray.
+1. Run `TrianguletOpener.exe`.
+2. Type your Triangulet username and password and press **Save and log in**.
+3. Pick a mode (try **Hunt**) and press **Start opening**.
+4. Close the window. It hides in the system tray and keeps opening. Left-click the tray icon to bring the window back; right-click for the quick menu.
 
 ---
 
-## files and privacy
+## Highlights
 
-everything is stored on your pc in `%appdata%\trianguletopener`: `config.json`, `pull-log.csv`, `history.json`, `opener.log`.
+### Fast
+- **About 12 packs per second, over 1 million a day** in the author's testing. Your speed depends on your connection, the site, and your settings.
+- Up to **16 workers**, each with several requests in flight at once ("At once"), sharing one warm connection pool.
+- Delay between pulls down to **0.000001 ms**.
+- **No rate-limit waiting**: a "slow down" reply just means try again right away.
+- **Test limits** finds a good Workers x At once setting for your connection by reading from the site. It spends no coins.
+- Stops **exactly** when your coins can't pay for another capsule (25 coins each).
 
-**`config.json` holds your username and password in plain text** so the app can log in again by itself. don't share it or upload it anywhere. the app only talks to the triangulet site, to github (to check for updates), and to discord if you turn that on.
+### Starts before Windows does
+Normally Windows only runs startup apps after you unlock your PC. This app can do better:
+- **Run at startup**: starts hidden in the tray when you sign in and begins opening right away.
+- **Before sign-in**: creates a scheduled task that opens capsules at boot, **before you unlock Windows**. Turn it on with one switch (Windows asks for admin approval once). When you sign in, the normal app takes over smoothly. There is no tray icon or Discord status until you sign in.
+- If the login token expires or fails, it logs in again every 10 seconds until it works. It never gives up on its own (a wrong password is the one exception, and it tells you).
 
-## build from source
+### Discord presence
+Show your friends what you're doing: **"Opening Capsules"** appears as your Discord activity while the opener runs.
+- Needs the Discord desktop app open on the same PC.
+- Turn it on or off with `discordOn` in `config.json`.
+- To show the logo, upload `triangulet-logo.png` as an Art Asset named **`logo`** in your own Discord application and put its Application ID in `discordId`. A default is built in.
+- Optional **webhook**: put a Discord webhook URL in `webhookUrl` to get a message in a channel whenever you pull a Chroma or a Mystical.
 
-needs [go](https://go.dev/dl/) 1.21 or newer and python with pillow (only to make the icon resource).
+### Hunting
+- **Fixed**: every worker opens the capsule you pick.
+- **Next on Mystical**: after a Mystical, moves on to the next capsule in the list.
+- **Hunt**: aims workers at the capsule with the best Mystical odds. *Focus* puts every worker on the best one; *Split 2/3/4* spreads them over the top capsules. *Chase ones I don't own* goes after Mysticals you are missing. *Stop after N Mysticals* ends the run for you.
+
+### Know what you have
+- **Trians**: your real inventory, an Owned / Missing switch, a collection progress bar, and search.
+- **Log**: every Epic-or-better pull and every new trian, also saved to `pull-log.csv`.
+- **History**: capsules per hour or day, Mystical and Chroma markers, and your coins over 24 h / 7 days / 30 days.
+- **Stats** and **Hunt** tabs: live pulls-per-minute graph, rarity bars, packs left, packs since your last Mystical, measured "1 in N".
+- **Auction**: list trians for sale.
+- **Alerts**: sound and tray notice for rare pulls, goal reached, low packs, out of coins, or a wrong login.
+
+### More
+- **Multiple accounts**: save several logins and switch with `<` `>`. Opening restarts on the new account if it was running.
+- **Updates**: checks this repo's latest release (Windows and Mac) and shows an **Update** button when there is a newer version. It downloads only from GitHub and checks the file against GitHub's checksum before installing. Turn the check off with `"noUpdateCheck": true` in `config.json`.
+- Resizable 16:9 window that hides to the tray.
+
+---
+
+## Files and privacy
+
+Everything is stored on your PC in `%APPDATA%\TrianguletOpener`: `config.json`, `pull-log.csv`, `history.json`, `opener.log`.
+
+**`config.json` holds your username and password in plain text** so the app can log in again by itself. Don't share it or upload it anywhere. The app only talks to the Triangulet site, to GitHub (to check for updates), and to Discord if you turn that on.
+
+## Build from source
+
+Needs [Go](https://go.dev/dl/) 1.21 or newer and Python with Pillow (only to make the icon resource).
 
 ```sh
-python tools/genres.py 35
-set goos=windows
-set goarch=amd64
-go build -trimpath -ldflags="-s -w -h=windowsgui" -o trianguletopener.exe .
+python tools/genres.py 36
+set GOOS=windows
+set GOARCH=amd64
+go build -trimpath -ldflags="-s -w -H=windowsgui" -o TrianguletOpener.exe .
 go test .
 ```
 
-the app uses only the go standard library. the window is drawn by a small built-in renderer, with win32 calls for the window, tray and text boxes.
+The app uses only the Go standard library. The window is drawn by a small built-in renderer, with Win32 calls for the window, tray and text boxes.
 
-## known limits
+## Known limits
 
-- not code-signed (see above).
-- speeds are not guaranteed: the site's own limits are the real ceiling, and very high settings can cause errors or an account ban.
-- the window, tray and boot-time code is cross-compiled and the opener engine is covered by automated tests, but the windows parts have had little testing on real machines. please report anything odd by opening an issue.
+- Not code-signed (see above).
+- Speeds are not guaranteed: the site's own limits are the real ceiling, and very high settings can cause errors or an account ban.
+- The window, tray and boot-time code is cross-compiled and the opener engine is covered by automated tests, but the Windows parts have had little testing on real machines. Please report anything odd by opening an issue.
 
-## license
+## License
 
-[mit](license).
+[MIT](LICENSE).

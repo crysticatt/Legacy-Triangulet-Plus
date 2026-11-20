@@ -1,0 +1,8 @@
+*.exe
+*.syso
+*.test
+dist/
+pulls.csv
+config.json
+history.json
+opener.log

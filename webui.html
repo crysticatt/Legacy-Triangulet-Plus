@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Triangulet Opener</title>
+<style>
+:root{
+  --bg:#0a1122;--panel:#0d162c;--card:#121e3a;--edge:#22345e;--field:#091020;
+  --accent:#3b8cff;--accentd:#2868d6;--cyan:#5ce1ff;--text:#ecf3ff;--muted:#8ca0cc;--dim:#5c709e;
+  --good:#42d684;--bad:#ec5462;--badd:#be3848;--warn:#ffc45c;
+  --r-Uncommon:#4ade80;--r-Rare:#3b8cff;--r-Epic:#a566ff;--r-Legendary:#ff9f2e;--r-Chroma:#2ee6d0;--r-Mystical:#ff4fa3;--r-Unique:#ffd84a;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:13px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+button,input,select{font:inherit;color:inherit}
+.app{display:grid;grid-template-columns:372px 1fr;min-height:100%}
+@media(max-width:900px){.app{grid-template-columns:1fr}}
+.left{background:var(--panel);border-right:1px solid var(--edge);padding:16px;display:flex;flex-direction:column;gap:10px}
+.right{padding:14px 16px;min-width:0}
+.head{display:flex;align-items:center;gap:10px}
+.logo{width:40px;height:40px;border-radius:10px;background:linear-gradient(#29d36a,#12a84e);display:grid;place-items:center;font-weight:800;font-size:22px;color:#fff}
+.head h1{font-size:18px;margin:0;white-space:nowrap}
+.head>div:nth-child(2){min-width:0;flex:1}
+.head .sub{font-size:12px;color:var(--muted);min-height:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.head .sub.warn{color:var(--warn)}
+.sp{flex:1}
+.pill{display:flex;align-items:center;gap:7px;border:1px solid var(--edge);background:var(--card);border-radius:14px;padding:4px 12px;font-weight:700;font-size:12px;color:var(--muted)}
+.pill i{width:9px;height:9px;border-radius:50%;background:var(--dim)}
+.pill.on{border-color:var(--good);color:var(--good);background:#12342c}
+.pill.on i{background:var(--good);animation:pulse 1.4s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(66,214,132,.5)}100%{box-shadow:0 0 0 9px rgba(66,214,132,0)}}
+.card{background:var(--card);border:1px solid var(--edge);border-radius:12px;padding:10px 12px}
+.lab{font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.03em}
+.lab.m{color:var(--muted);font-size:10px}
+.row{display:flex;align-items:center;gap:8px}
+.row.top{justify-content:space-between;margin-bottom:6px}
+.dim{color:var(--dim);font-size:11px}
+.muted{color:var(--muted)}
+input[type=text],input[type=password],input[type=number],select{background:var(--field);border:1px solid var(--edge);border-radius:9px;padding:6px 9px;width:100%;outline:none}
+input:focus,select:focus{border-color:var(--accent)}
+.btn{border:1px solid var(--edge);background:var(--card);border-radius:9px;padding:6px 12px;cursor:pointer;transition:.12s}
+.btn:hover{border-color:var(--accent);background:#162646}
+.btn:active{transform:scale(.97)}
+.btn.p{background:var(--accent);border-color:var(--accent);font-weight:600}
+.btn.p:hover{background:#4d98ff}
+.btn.stop{background:var(--badd);border-color:var(--badd);font-weight:700}
+.btn.stop:hover{background:#d4414f}
+.btn.go{background:var(--accent);border-color:var(--accent);font-weight:700}
+.btn.s{padding:2px 9px;font-size:11px;border-radius:7px}
+.btn.big{padding:10px;font-size:14px;flex:1}
+.btn[disabled]{opacity:.45;cursor:default}
+.seg{display:flex;background:var(--field);border:1px solid var(--edge);border-radius:10px;padding:3px;gap:2px}
+.seg button{flex:1;border:0;background:none;border-radius:7px;padding:6px 4px;cursor:pointer;color:var(--muted)}
+.seg button.on{background:var(--accent);color:#fff;font-weight:600}
+.seg button:not(.on):hover{color:var(--text)}
+.chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+.chip{border:1px solid var(--edge);background:var(--field);border-radius:8px;padding:5px 0;cursor:pointer;font-size:12px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip.on{background:var(--accent);border-color:var(--accent);font-weight:600}
+.stepper{display:flex;align-items:center;background:var(--field);border:1px solid var(--edge);border-radius:9px}
+.stepper button{border:0;background:none;width:28px;height:28px;cursor:pointer;color:var(--muted);font-size:15px}
+.stepper button:hover{color:var(--text)}
+.stepper span{flex:1;text-align:center;font-weight:600}
+.cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tog{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;background:var(--field);border:1px solid var(--edge);border-radius:9px;padding:5px 9px;flex:1;font-size:12px}
+.tog b{width:30px;height:16px;border-radius:8px;background:#1a2748;position:relative;flex:none;transition:.15s}
+.tog b:after{content:"";position:absolute;left:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#7f93c4;transition:.15s}
+.tog.on b{background:var(--accent)}
+.tog.on b:after{left:16px;background:#fff}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media(max-width:700px){.tiles{grid-template-columns:repeat(2,1fr)}}
+.tile .v{font-size:22px;font-weight:700}
+.tile .s{font-size:11px;color:var(--dim)}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--edge);margin:12px 0 10px;overflow-x:auto}
+.tabs button{border:0;background:none;padding:8px 16px;cursor:pointer;color:var(--muted);font-size:13px;border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tabs button.on{color:var(--text);font-weight:600;border-bottom-color:var(--accent)}
+.view{animation:fade .25s}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.bar{height:6px;background:var(--field);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:3px;transition:width .5s}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:60vh;overflow:auto;padding-right:4px}
+@media(max-width:700px){.grid2{grid-template-columns:1fr}}
+.tri{display:flex;align-items:center;gap:10px;background:var(--field);border-radius:9px;padding:7px 10px;border-left:3px solid var(--c)}
+.tri .t{width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:14px solid var(--c)}
+.tri .n{font-weight:600}.tri .m{font-size:11px;color:var(--c)}
+.tri .q{margin-left:auto;font-weight:700}
+.tri.miss{opacity:.55}.tri.miss .q{font-weight:400;color:var(--dim);font-size:11px}
+table{width:100%;border-collapse:collapse}
+td,th{padding:6px 8px;text-align:left}
+th{font-size:10px;color:var(--muted);letter-spacing:.04em}
+tr{background:var(--field)}tr+tr td{border-top:3px solid var(--card)}
+td:first-child{border-radius:8px 0 0 8px}td:last-child{border-radius:0 8px 8px 0}
+.badge{background:#12342c;color:var(--good);border-radius:5px;padding:1px 6px;font-size:10px;font-weight:700}
+.mini{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:8px 0}
+.mini .v{font-size:20px;font-weight:700}
+.chartbox{background:var(--field);border-radius:10px;padding:10px;margin-top:8px}
+svg{display:block;width:100%}
+.err{color:var(--bad);font-size:12px;min-height:16px}
+.toast{position:fixed;bottom:16px;right:16px;background:var(--card);border:1px solid var(--edge);border-radius:10px;padding:10px 14px;max-width:340px;box-shadow:0 8px 30px rgba(0,0,0,.4);display:none}
+.toast.show{display:block}
+.toast.bad{border-color:var(--bad)}
+.empty{color:var(--dim);text-align:center;padding:30px 0}
+.rbar{display:grid;grid-template-columns:100px 1fr 60px 60px;align-items:center;gap:8px;padding:3px 0}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="left">
+    <div class="head">
+      <div class="logo">T</div>
+      <div><h1>Triangulet Opener</h1><div class="sub" id="sub"></div></div>
+      <div class="sp"></div>
+      <div class="pill" id="pill"><i></i><span>Idle</span></div>
+    </div>
+
+    <div class="card">
+      <div class="row top"><span class="lab">ACCOUNT</span><span class="dim" id="acctdesc" style="flex:1;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+        <span class="row" style="gap:3px"><button class="btn s" id="aprev" title="Previous login">‹</button><button class="btn s" id="anext" title="Next login">›</button><button class="btn s" id="anew" title="Add a login">+</button><button class="btn s" id="arem" title="Remove this login">−</button></span></div>
+      <div class="cols3" style="grid-template-columns:1fr 1fr"><input type="text" id="user" placeholder="username" autocomplete="off" spellcheck="false"><input type="password" id="pass" placeholder="password" autocomplete="off"></div>
+      <button class="btn p" id="login" style="width:100%;margin-top:8px">Save and log in</button>
+    </div>
+
+    <div class="card">
+      <div class="row top"><span class="lab">MODE</span><button class="btn s" id="refresh">refresh</button></div>
+      <div class="seg" id="modeSeg"><button data-v="fixed">Fixed</button><button data-v="advance">Next on Mystical</button><button data-v="hunt">Hunt</button></div>
+      <div id="modeBody"></div>
+    </div>
+
+    <div class="card">
+      <div class="lab" style="margin-bottom:6px">SPEED</div>
+      <div class="cols3">
+        <div><div class="dim">Delay (ms)</div><input type="text" id="delay" inputmode="decimal"></div>
+        <div><div class="dim">Workers</div><div class="stepper"><button data-s="workers" data-d="-1">−</button><span id="workers"></span><button data-s="workers" data-d="1">+</button></div></div>
+        <div><div class="dim">At once</div><div class="stepper"><button data-s="inflight" data-d="-1">−</button><span id="inflight"></span><button data-s="inflight" data-d="1">+</button></div></div>
+      </div>
+      <div class="row" id="updrow" style="margin:8px 0;display:none"><span id="updline" style="flex:1;color:var(--good)"></span><button class="btn s" id="updbtn">Update</button></div>
+      <div class="row" style="margin:8px 0"><span class="dim" id="speedline" style="flex:1"></span><button class="btn s" id="speedtest">Test limits</button></div>
+      <div class="row"><div class="tog" id="tLogin"><b></b>Run at login</div><div class="tog" id="tDiscord"><b></b>Discord presence</div></div>
+    </div>
+    <div class="sp"></div>
+    <div class="err" id="err"></div>
+    <div class="row"><button class="btn big go" id="start">Start opening</button><button class="btn" id="quit" title="Stop opening and close the opener completely">Quit</button></div>
+  </div>
+
+  <div class="right">
+    <div class="tiles">
+      <div class="card tile"><div class="lab m">COINS</div><div class="v" id="t0"></div><div class="s" id="t0s"></div></div>
+      <div class="card tile"><div class="lab m">CAPSULES OPENED</div><div class="v" id="t1"></div><div class="s" id="t1s"></div></div>
+      <div class="card tile"><div class="lab m">PER MINUTE</div><div class="v" id="t2"></div><div class="s" id="t2s"></div></div>
+      <div class="card tile"><div class="lab m">MYSTICAL</div><div class="v" id="t3"></div><div class="s" id="t3s"></div></div>
+    </div>
+    <div class="tabs" id="tabs"></div>
+    <div class="card view" id="view" style="min-height:300px"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const RC={Uncommon:"#4ade80",Rare:"#3b8cff",Epic:"#a566ff",Legendary:"#ff9f2e",Chroma:"#2ee6d0",Mystical:"#ff4fa3",Unique:"#ffd84a"};
+const RORDER=["Uncommon","Rare","Epic","Legendary","Chroma","Mystical","Unique"];
+const TABS=["Trians","Stats","Hunt","Log","History","Auction"];
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt=n=>Math.round(Number(n)||0).toLocaleString("en-US");
+let ST=null, tab=+(localStorage.getItem("tab")||0), trView=0, search="", histRange=0, aucSel="", busy=false;
+let viewKey="";
+
+async function act(a,extra){
+  try{
+    const r=await fetch("/api/do",{method:"POST",headers:{"Content-Type":"application/json","X-Opener":"1"},body:JSON.stringify(Object.assign({a},extra||{}))});
+    const j=await r.json();
+    if(j.error){showErr(j.error);return false}
+    $("err").textContent="";
+    poll();return true;
+  }catch(e){showErr("Lost connection to the opener.");return false}
+}
+function showErr(m){const e=$("err");e.textContent=m;clearTimeout(showErr.t);showErr.t=setTimeout(()=>{if(e.textContent===m)e.textContent=""},9000)}
+function toast(m,bad){const t=$("toast");t.textContent=m;t.className="toast show"+(bad?" bad":"");clearTimeout(toast.t);toast.t=setTimeout(()=>t.className="toast",4000)}
+
+async function poll(){
+  try{
+    const r=await fetch("/api/state",{cache:"no-store"});
+    ST=await r.json();
+    render();
+  }catch(e){$("sub").textContent="Reconnecting...";$("sub").className="sub warn"}
+}
+
+function rarityOf(it){return it.Rarity||"Rare"}
+function setIfIdle(el,v){if(document.activeElement!==el&&el.value!==v)el.value=v}
+
+function render(){
+  const o=ST,s=o.Snap;
+  document.title=(s.Running?"▶ ":"")+"Triangulet Opener";
+  // header
+  const sub=$("sub");
+  let line=s.Running?('Opening'+(s.Mode==="hunt"?" (hunting)":' "'+(s.Capsule||"")+'"')+" | "+fmt(s.AcctOpened||s.Opened)+" opened"):(s.Info||"Idle");
+  sub.className="sub";
+  if(s.Notice){line=s.Notice;sub.className="sub warn"}
+  else if(s.Info&&s.Running===false){line=s.Info}
+  sub.textContent=line;sub.title=line;
+  $("pill").className="pill"+(s.Running?" on":"");$("pill").lastChild.textContent=s.Running?"Opening":"Idle";
+  // account
+  const n=(s.AcctNames||[]).length;
+  let desc=s.TokenDesc||(s.HasCreds?"token is fetched automatically":"not logged in");
+  if(n>1&&s.AcctIdx>=0)desc="login "+(s.AcctIdx+1)+" of "+n;
+  $("acctdesc").textContent=desc;
+  $("aprev").disabled=$("anext").disabled=n<2;$("arem").disabled=s.AcctIdx<0;
+  setIfIdle($("user"),o.Username||"");
+  if(document.activeElement!==$("pass"))$("pass").placeholder=o.HasPassword?"password saved":"password";
+  // mode
+  for(const b of $("modeSeg").children)b.className=b.dataset.v===s.Mode?"on":"";
+  const mb=$("modeBody");
+  const key=s.Mode+"|"+(s.Capsule||"")+"|"+(s.HuntSpread||1)+"|"+o.Capsules.join(",")+"|"+(s.Hunt||[]).map(h=>h.Capsule+h.Workers+h.Odds).join(",");
+  if(mb.dataset.k!==key){
+    mb.dataset.k=key;
+    if(s.Mode==="hunt"){
+      const parts=(s.Hunt||[]).filter(h=>h.Workers>0).map(h=>h.Known?esc(h.Capsule)+" "+(+h.Odds.toFixed(3))+"%":esc(h.Capsule));
+      mb.innerHTML='<div class="muted" style="margin:8px 0 6px">Aim the workers at the best Mystical odds</div>'
+        +'<div class="seg" id="spreadSeg">'+[1,2,3,4].map(i=>'<button data-n="'+i+'" class="'+(i===(s.HuntSpread||1)?"on":"")+'">'+(i===1?"Focus":"Split "+i)+'</button>').join("")+'</div>'
+        +'<div class="lab" style="margin-top:8px">Now hunting</div><div>'+(parts.length?parts.join(" · "):"Log in to rank the capsules")+'</div>';
+    }else{
+      mb.innerHTML='<div class="chips">'+o.Capsules.map(c=>'<div class="chip'+(c===s.Capsule?" on":"")+'" data-c="'+esc(c)+'" title="'+esc(c)+'">'+esc(c)+'</div>').join("")+'</div>';
+    }
+  }
+  // speed
+  setIfIdle($("delay"),String(s.DelayMs!==undefined?(+(o.Snap.DelayMs)).toString():""));
+  $("workers").textContent=s.Workers;$("inflight").textContent=s.InFlight;
+  const lanes=s.Workers*s.InFlight;
+  $("speedline").textContent=s.SpeedMsg?s.SpeedMsg:lanes+" in flight  ·  "+s.WorkersRunning+"/"+s.Workers+" running";
+  {const has=!!(s.UpdateVer||s.UpdateMsg);$("updrow").style.display=has?"flex":"none";
+   $("updline").textContent=s.UpdateMsg?s.UpdateMsg:(s.UpdateVer?"Version "+s.UpdateVer+" is available":"");
+   $("updbtn").textContent=s.UpdateBusy?"Updating...":(s.UpdateMsg?"Retry":"Update");$("updbtn").disabled=!!s.UpdateBusy;$("updbtn").style.display=s.UpdateVer?"":"none";}
+  $("speedtest").textContent=s.SpeedBusy?"Testing...":"Test limits";$("speedtest").disabled=!!s.SpeedBusy;
+  $("tLogin").className="tog"+(o.LoginItem?" on":"");$("tLogin").style.display=o.CanLogin?"":"none";
+  $("tDiscord").className="tog"+(o.DiscordOn?" on":"");
+  const sb=$("start");sb.textContent=s.Running?"Stop opening":"Start opening";sb.className="btn big "+(s.Running?"stop":"go");
+  // tiles
+  if(s.HasAcct){$("t0").textContent=fmt(s.Coins);$("t0s").textContent=fmt(s.PacksLeft)+" packs left";$("t1").textContent=fmt(s.AcctOpened);$("t1s").textContent="+"+fmt(s.Opened)+" this session"}
+  else{$("t0").textContent="-";$("t0s").textContent="log in to load";$("t1").textContent=fmt(s.Opened);$("t1s").textContent="this session"}
+  $("t2").textContent=fmt(s.PerMin);$("t2s").textContent=fmt(s.PerMin*60)+" per hour";
+  $("t3").textContent=fmt(s.Mystical);$("t3s").textContent=s.Mystical>0?fmt(s.SinceMystical)+" since last":"none yet";
+  // tabs
+  const tb=$("tabs");
+  if(!tb.children.length){TABS.forEach((t,i)=>{const b=document.createElement("button");b.textContent=t;b.onclick=()=>{tab=i;localStorage.setItem("tab",i);viewKey="";render()};tb.appendChild(b)})}
+  [...tb.children].forEach((b,i)=>b.className=i===tab?"on":"");
+  drawView();
+}
+
+function sortInv(list){
+  return list.slice().sort((a,b)=>RORDER.indexOf(b.Rarity)-RORDER.indexOf(a.Rarity)||b.Qty-a.Qty||a.Name.localeCompare(b.Name));
+}
+function triCell(it,miss){
+  const c=RC[it.Rarity]||"#3b8cff";
+  return '<div class="tri'+(miss?" miss":"")+'" style="--c:'+c+'"><div class="t"></div><div><div class="n">'+esc(it.Name)+'</div><div class="m">'+esc(it.Rarity)+" · "+esc(it.Capsule)+'</div></div><div class="q">'+(miss?"missing":"x"+fmt(it.Qty))+'</div></div>';
+}
+
+function drawView(){
+  const s=ST.Snap,v=$("view");
+  const sig=[tab,trView,histRange,aucSel,search].join("|");
+  const full=viewKey!==sig;
+  const data=JSON.stringify([tab,tab===0?[s.Inv&&s.Inv.length,s.Missing&&s.Missing.length,s.Collected]:tab===1?[s.Counts,s.Series&&s.Series.length,s.Opened]:tab===2?[s.Hunt,s.StopAfter,s.HuntMissing,s.PacksLeft,s.SinceMystical,s.MysticalRun,s.PacksPerMystical]:tab===3?[s.Log&&s.Log.length&&s.Log[0].Time,s.AlertSound]:tab===4?[s.Hist&&s.Hist.length,s.Hist&&s.Hist.length&&s.Hist[s.Hist.length-1]]:[s.AuctionMsg,s.AuctionBusy,s.Inv&&s.Inv.length]]);
+  if(!full&&v.dataset.d===data)return;
+  const keepScroll=full?0:(v.querySelector(".grid2")||{}).scrollTop||0;
+  v.dataset.d=data;
+  if(full){viewKey=sig;v.classList.remove("view");void v.offsetWidth;v.classList.add("view")}
+  [vTrians,vStats,vHunt,vLog,vHistory,vAuction][tab](v,s);
+  const g=v.querySelector(".grid2");if(g&&keepScroll)g.scrollTop=keepScroll;
+}
+
+function vTrians(v,s){
+  const inv=s.Inv||[],miss=s.Missing||[];
+  const pct=s.TotalTrians?Math.round(s.Collected*100/s.TotalTrians):0;
+  let list=trView===0?sortInv(inv):miss;
+  if(search)list=list.filter(t=>(t.Name+" "+t.Capsule+" "+t.Rarity).toLowerCase().includes(search));
+  v.innerHTML='<div class="row top"><div><div class="lab">YOUR TRIANS</div><div class="muted">'+s.Collected+" / "+s.TotalTrians+" collected ("+pct+'%) · '+fmt(s.InvTotal)+' total</div></div>'
+    +'<div class="row"><div class="seg" id="trSeg" style="width:150px"><button data-v="0" class="'+(trView===0?"on":"")+'">Owned</button><button data-v="1" class="'+(trView===1?"on":"")+'">Missing</button></div><input type="text" id="srch" placeholder="search trians" value="'+esc(search)+'" style="width:160px"></div></div>'
+    +'<div class="bar" style="margin-bottom:10px"><i style="width:'+pct+'%"></i></div>'
+    +(list.length?'<div class="grid2">'+list.map(t=>triCell(t,trView===1)).join("")+'</div>':'<div class="empty">'+(inv.length||miss.length?"Nothing matches.":"Log in to see your trians.")+'</div>');
+  $("trSeg").onclick=e=>{const b=e.target.closest("button");if(b){trView=+b.dataset.v;viewKey=""}drawView()};
+  const q=$("srch");q.oninput=()=>{search=q.value.toLowerCase();const p=q.selectionStart;viewKey="";drawView();const n=$("srch");n.focus();n.setSelectionRange(p,p)};
+}
+
+function sparkline(series){
+  const rates=[];
+  for(let i=1;i<series.length;i++)rates.push(Math.max(0,(series[i]-series[i-1])/5*60));
+  const sm=rates.map((_,i)=>{let a=0,c=0;for(let j=Math.max(0,i-5);j<=i;j++){a+=rates[j];c++}return a/c}).slice(-360);
+  if(sm.length<2)return '<div class="empty">Start opening to see the graph</div>';
+  const W=800,H=150,mx=Math.max(1,...sm)*1.15;
+  const pts=sm.map((r,i)=>[i*W/(sm.length-1),H-r/mx*H]);
+  const line=pts.map(p=>p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ");
+  return '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="height:150px"><defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3b8cff" stop-opacity=".45"/><stop offset="1" stop-color="#3b8cff" stop-opacity="0"/></linearGradient></defs>'
+   +[0,1,2,3].map(i=>'<line x1="0" x2="'+W+'" y1="'+(i*H/3)+'" y2="'+(i*H/3)+'" stroke="#22345e" stroke-opacity=".5"/>').join("")
+   +'<polygon points="0,'+H+" "+line+" "+W+","+H+'" fill="url(#sg)"/><polyline points="'+line+'" fill="none" stroke="#5ce1ff" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>'
+   +'<div class="dim" style="text-align:right">peak '+fmt(mx/1.15)+'/min · last 30 min</div>';
+}
+
+function vStats(v,s){
+  const c=s.Counts||{};let total=0,mx=1;RORDER.forEach(r=>{total+=c[r]||0;mx=Math.max(mx,c[r]||0)});
+  v.innerHTML='<div class="lab">THIS SESSION</div><div class="mini"><div><div class="lab m">OPENED</div><div class="v">'+fmt(s.Opened)+'</div></div><div><div class="lab m">PER HOUR</div><div class="v">'+fmt(s.PerMin*60)+'</div></div><div><div class="lab m">WORKERS</div><div class="v">'+s.WorkersRunning+'</div></div><div><div class="lab m">RUNNING FOR</div><div class="v">'+(s.StartedAgo>0?dur(s.StartedAgo):"-")+'</div></div></div>'
+   +'<div class="chartbox"><div class="lab">PULLS PER MINUTE</div>'+sparkline(s.Series||[])+'</div>'
+   +'<div class="lab" style="margin:12px 0 4px">PULLS BY RARITY</div>'
+   +RORDER.map(r=>{const n=c[r]||0;return '<div class="rbar" style="opacity:'+(n?1:.45)+'"><div><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+RC[r]+';margin-right:8px"></span>'+r+'</div><div class="bar" style="height:9px"><i style="width:'+(n*100/mx)+'%;background:'+RC[r]+'"></i></div><div class="dim" style="text-align:right">'+(total?(n*100/total).toFixed(1)+"%":"")+'</div><div style="text-align:right;font-weight:700">'+fmt(n)+'</div></div>'}).join("");
+}
+function dur(sec){const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60);return h>0?h+"h "+m+"m":m>0?m+"m "+(sec%60)+"s":sec+"s"}
+
+function vHunt(v,s){
+  const rows=s.Hunt||[];
+  const val=h=>h.Chasing?h.NewOdds:h.Odds;
+  const mx=Math.max(0.0001,...rows.map(val));
+  v.innerHTML='<div class="row top"><div><div class="lab">MYSTICAL HUNT</div><div class="muted">Hunting with '+s.Workers+' worker(s). Ranked by '+(s.HuntMissing?"Mystical odds for trians you don't own":"Mystical odds")+'.</div></div>'
+   +'<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end"><div class="row"><span class="muted">Stop after Mystical</span><div class="stepper" style="width:110px"><button id="gm">−</button><span>'+(s.StopAfter>0?s.StopAfter:"off")+'</span><button id="gp">+</button></div></div><div class="tog'+(s.HuntMissing?" on":"")+'" id="chase" style="flex:none"><b></b>Chase ones I don\'t own</div></div></div>'
+   +(rows.length?'<table>'+rows.map((h,i)=>'<tr><td class="dim">'+(i+1)+'</td><td style="font-weight:600">'+esc(h.Capsule)+'</td><td style="width:45%">'+(h.Known?'<div class="bar" style="height:9px"><i style="width:'+(val(h)/mx*100)+'%;background:var(--r-Mystical)"></i></div>':'')+'</td><td style="text-align:right">'+(h.Known?(+val(h).toFixed(3))+"%":(h.Mystics?h.Mystics+" Mystical":"?"))+'</td><td style="width:90px;text-align:right">'+(h.Workers?'<span class="badge" style="background:#13304d;color:var(--cyan)">'+h.Workers+' worker'+(h.Workers>1?"s":"")+'</span>':"")+'</td></tr>').join("")+'</table>':'<div class="empty">Log in to rank the capsules.</div>')
+   +'<div class="mini" style="margin-top:14px"><div><div class="lab m">PACKS LEFT</div><div class="v">'+fmt(s.PacksLeft)+'</div></div><div><div class="lab m">SINCE LAST</div><div class="v">'+fmt(s.SinceMystical)+'</div></div><div><div class="lab m">MEASURED</div><div class="v">'+(s.PacksPerMystical>0?"1 in "+fmt(s.PacksPerMystical):"-")+'</div></div><div><div class="lab m">COINS / MYSTICAL</div><div class="v">'+(s.CoinsPerMystical>0?fmt(s.CoinsPerMystical):"-")+'</div></div></div>'
+   +'<div class="dim">'+s.CoinCost+' coins per capsule. Measured numbers sharpen as you open more.</div>';
+  $("gm").onclick=()=>act("goal",{n:Math.max(0,s.StopAfter-1)});$("gp").onclick=()=>act("goal",{n:s.StopAfter+1});
+  $("chase").onclick=()=>act("chase",{on:!s.HuntMissing});
+}
+
+function vLog(v,s){
+  const L=s.Log||[];
+  v.innerHTML='<div class="row top"><div><div class="lab">PULL LOG</div><div class="muted">Epic or better, and every new trian</div></div><div class="row"><div class="tog'+(s.AlertSound?" on":"")+'" id="snd" style="flex:none"><b></b>Sound alerts</div><a class="btn" href="/api/log.csv" download style="text-decoration:none">Download CSV</a></div></div>'
+   +(L.length?'<div style="max-height:60vh;overflow:auto"><table>'+L.map(e=>{const d=new Date(e.Time);return '<tr><td class="dim">'+d.toLocaleTimeString([], {hour12:false})+'</td><td style="font-weight:700;color:'+(RC[e.Rarity]||"#fff")+'">'+esc(e.Rarity)+'</td><td style="font-weight:600">'+esc(e.Trian)+'</td><td class="muted">'+esc(e.Capsule)+'</td><td style="text-align:right">'+(e.New?'<span class="badge">NEW</span>':"")+'</td></tr>'}).join("")+'</table></div>':'<div class="empty">Nothing yet. Epic-or-better pulls and new trians show up here.</div>');
+  $("snd").onclick=()=>act("sound",{on:!s.AlertSound});
+}
+
+function histSeries(hist,rng){
+  const now=new Date();let n=rng===0?24:rng===1?7:30;const pts=[];
+  const start=new Date(now);
+  if(rng===0){start.setMinutes(0,0,0);start.setHours(start.getHours()-(n-1))}
+  else{start.setHours(0,0,0,0);start.setDate(start.getDate()-(n-1))}
+  for(let i=0;i<n;i++){const d=new Date(start);if(rng===0)d.setHours(d.getHours()+i);else d.setDate(d.getDate()+i);
+    pts.push({t:d.getTime(),label:rng===0?d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",hour12:false}):d.toLocaleDateString([], {month:"short",day:"numeric"}),p:0,m:0,c:0,coins:-1})}
+  let carry=-1;
+  for(const b of hist||[]){
+    const t=b.t*1000;
+    if(t<pts[0].t){if(b.coins>=0)carry=b.coins;continue}
+    let idx=-1;for(let i=n-1;i>=0;i--){if(t>=pts[i].t){idx=i;break}}
+    if(idx<0)continue;const p=pts[idx];p.p+=b.pulls;p.m+=b.myst;p.c+=b.chroma;if(b.coins>=0)p.coins=b.coins;
+  }
+  for(const p of pts){if(p.coins>=0)carry=p.coins;else p.coins=carry}
+  return pts;
+}
+function vHistory(v,s){
+  const pts=histSeries(s.Hist,histRange);
+  let total=0,my=0,ch=0,mx=1;pts.forEach(p=>{total+=p.p;my+=p.m;ch+=p.c;mx=Math.max(mx,p.p)});
+  const unit=histRange===0?"hour":"day";
+  const W=800,H=140,sw=W/pts.length,bw=Math.max(3,sw*.72);
+  let bars="";pts.forEach((p,i)=>{const x=i*sw+(sw-bw)/2,h=p.p/mx*(H-22);
+    if(p.p>0)bars+='<rect x="'+x.toFixed(1)+'" y="'+(H-h).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="3" fill="#3b8cff"><title>'+p.label+": "+fmt(p.p)+'</title></rect>';
+    if(p.m>0)bars+='<circle cx="'+(x+bw/2).toFixed(1)+'" cy="6" r="4" fill="#ff4fa3"/>';else if(p.c>0)bars+='<circle cx="'+(x+bw/2).toFixed(1)+'" cy="6" r="4" fill="#2ee6d0"/>'});
+  const known=pts.filter(p=>p.coins>=0);let coinSvg='<div class="empty">Coins appear here once the opener has run for a while</div>';
+  if(known.length>=2){
+    const lo0=Math.min(...known.map(p=>p.coins)),hi0=Math.max(...known.map(p=>p.coins)),span=Math.max(hi0-lo0,1),lo=lo0-span*.1,hi=hi0+span*.1,CH=110;
+    const xy=pts.map((p,i)=>p.coins<0?null:[i*W/(pts.length-1),CH-(p.coins-lo)/(hi-lo)*CH]).filter(Boolean);
+    const l=xy.map(p=>p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ");
+    coinSvg='<svg viewBox="0 0 '+W+' '+CH+'" preserveAspectRatio="none" style="height:110px"><polygon points="'+xy[0][0]+","+CH+" "+l+" "+xy[xy.length-1][0]+","+CH+'" fill="#42d684" fill-opacity=".25"/><polyline points="'+l+'" fill="none" stroke="#42d684" stroke-width="2" vector-effect="non-scaling-stroke"/></svg><div class="dim" style="text-align:right">now '+fmt(pts[pts.length-1].coins)+" · high "+fmt(hi0)+" · low "+fmt(lo0)+'</div>';
+  }
+  v.innerHTML='<div class="row top"><div class="lab">HISTORY</div><div class="seg" id="hrSeg" style="width:230px">'+["24 h","7 days","30 days"].map((t,i)=>'<button data-v="'+i+'" class="'+(i===histRange?"on":"")+'">'+t+'</button>').join("")+'</div></div>'
+   +'<div class="mini"><div><div class="lab m">OPENED</div><div class="v">'+fmt(total)+'</div></div><div><div class="lab m">PER '+unit.toUpperCase()+'</div><div class="v">'+fmt(total/pts.length)+'</div></div><div><div class="lab m">MYSTICAL</div><div class="v">'+my+'</div></div><div><div class="lab m">CHROMA</div><div class="v">'+ch+'</div></div></div>'
+   +'<div class="chartbox"><div class="row top"><span class="lab">CAPSULES PER '+unit.toUpperCase()+'</span><span class="dim">'+(my?"1 Mystical per "+fmt(total/my)+" capsules · ":"")+'<span style="color:#ff4fa3">●</span> Mystical <span style="color:#2ee6d0">●</span> Chroma</span></div>'
+   +(total?'<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="height:140px">'+bars+'</svg><div class="row top" style="margin:4px 0 0"><span class="dim">'+pts[0].label+'</span><span class="dim">peak '+fmt(mx)+"/"+unit+'</span><span class="dim">'+pts[pts.length-1].label+'</span></div>':'<div class="empty">Nothing opened in this time. Start opening to build history.</div>')+'</div>'
+   +'<div class="chartbox"><div class="lab" style="margin-bottom:6px">COINS</div>'+coinSvg+'</div>';
+  $("hrSeg").onclick=e=>{const b=e.target.closest("button");if(b){histRange=+b.dataset.v;viewKey="";drawView()}};
+}
+
+function vAuction(v,s){
+  const inv=sortInv(s.Inv||[]);
+  if(!aucSel&&inv.length)aucSel=inv[0].Name;
+  const cur=inv.find(t=>t.Name===aucSel);
+  v.innerHTML='<div class="lab" style="margin-bottom:8px">SELL ON THE AUCTION</div>'+(inv.length?
+   '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px"><div class="grid2" style="grid-template-columns:1fr;max-height:50vh">'+inv.map(t=>'<div class="tri'+(t.Name===aucSel?"":"")+'" data-n="'+esc(t.Name)+'" style="--c:'+(RC[t.Rarity]||"#3b8cff")+';cursor:pointer;'+(t.Name===aucSel?"outline:2px solid var(--accent)":"")+'"><div class="t"></div><div class="n">'+esc(t.Name)+'</div><div class="q">x'+fmt(t.Qty)+'</div></div>').join("")+'</div>'
+   +'<div><div style="font-size:16px;font-weight:700">'+esc(aucSel)+'</div><div class="muted" style="margin-bottom:10px">you own x'+fmt(cur?cur.Qty:0)+'</div>'
+   +'<div class="dim">Amount of trians</div><input type="number" id="aam" value="1" min="1"><div class="dim" style="margin-top:8px">Starting bid</div><input type="number" id="abid" value="100" min="0"><div class="dim" style="margin-top:8px">Payout (0 = none)</div><input type="number" id="apay" value="0" min="0">'
+   +'<button class="btn p" id="alist" style="width:100%;margin-top:12px"'+(s.AuctionBusy?" disabled":"")+'>List on auction</button><div class="muted" style="margin-top:8px">'+esc(s.AuctionMsg||"")+'</div></div></div>':'<div class="empty">Log in to see your trians.</div>');
+  v.querySelectorAll("[data-n]").forEach(el=>el.onclick=()=>{aucSel=el.dataset.n;viewKey="";drawView()});
+  const b=$("alist");if(b)b.onclick=()=>act("auction",{s:aucSel,amount:+$("aam").value||0,bid:+$("abid").value||0,pay:+$("apay").value||0});
+}
+
+// ---------- controls ----------
+$("start").onclick=()=>act(ST&&ST.Snap.Running?"stop":"start");
+$("login").onclick=()=>{act("login",{s:$("user").value,p:$("pass").value});$("pass").value=""};
+$("pass").onkeydown=e=>{if(e.key==="Enter")$("login").click()};
+$("refresh").onclick=()=>act("refresh");
+$("quit").onclick=async()=>{if(confirm("Quit the opener completely? Opening will stop until you start it again.")){await act("quit");document.body.innerHTML='<div style="padding:60px;text-align:center;color:#8ca0cc;font-size:16px">The opener has quit. You can close this tab.</div>'}};
+$("aprev").onclick=()=>{act("acct",{n:-1});$("pass").value=""};
+$("anext").onclick=()=>{act("acct",{n:1});$("pass").value=""};
+$("anew").onclick=()=>{$("user").value="";$("pass").value="";$("user").focus()};
+$("arem").onclick=()=>{if(confirm("Remove this saved login?"))act("acctremove")};
+$("modeSeg").onclick=e=>{const b=e.target.closest("button");if(b)act("mode",{s:b.dataset.v})};
+$("modeBody").onclick=e=>{const c=e.target.closest(".chip");if(c)act("capsule",{s:c.dataset.c});const b=e.target.closest("#spreadSeg button");if(b)act("spread",{n:+b.dataset.n})};
+document.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{const k=b.dataset.s;act(k,{n:(+ST.Snap[k==="workers"?"Workers":"InFlight"])+(+b.dataset.d)})});
+const applyDelay=()=>{const f=parseFloat($("delay").value.replace(",","."));if(isFinite(f)&&f>=0)act("delay",{f})};
+$("delay").onchange=applyDelay;$("delay").onkeydown=e=>{if(e.key==="Enter"){applyDelay();$("delay").blur()}};
+$("updbtn").onclick=()=>{if(confirm("Install the update and restart the opener?"))act("update")};
+$("speedtest").onclick=()=>act("speedtest");
+$("tLogin").onclick=()=>act("loginitem",{on:!ST.LoginItem});
+$("tDiscord").onclick=()=>act("discord",{on:!ST.DiscordOn});
+
+poll();setInterval(()=>{if(!document.hidden)poll()},1000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)poll()});
+</script>
+</body>
+</html>
