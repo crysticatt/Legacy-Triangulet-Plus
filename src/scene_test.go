@@ -61,7 +61,8 @@ func TestScenePreview(t *testing.T) {
 		t.Skip("set PREVIEW_DIR to render previews")
 	}
 	os.MkdirAll(dir, 0o755)
-	for tab := 0; tab < 7; tab++ {
+	for tab := 0; tab < 11; tab++ {
+		applyTheme("dark")
 		st := NewUIState()
 		st.Settle = true
 		st.Tab, st.StartupOn = tab, true
@@ -72,12 +73,23 @@ func TestScenePreview(t *testing.T) {
 			st.Tab, st.TriansView = 0, 1
 		}
 		st.Hover = "start"
-		c := NewCanvas(winW, winH)
 		s := sampleSnapshot()
+		switch {
+		case tab >= 7 && tab <= 9: // Settings page in dark / light / blue
+			st.Tab, st.Settings = 0, true
+			s.Theme = themeNames[tab-7]
+			applyTheme(s.Theme)
+			st.SetMsg = "Saved: C:\\Users\\you\\Desktop\\TrianguletOpener-backup-2026-11-20.tribackup"
+		case tab == 10: // the Trians tab in the light theme
+			st.Tab = 0
+			applyTheme("light")
+		}
+		c := NewCanvas(winW, winH)
 		f := DrawScene(c, s, st)
+		applyTheme("dark")
 		img := image.NewRGBA(image.Rect(0, 0, winW, winH))
 		copy(img.Pix, c.Pix)
-		name := filepath.Join(dir, "tab"+string(rune('0'+tab)))
+		name := filepath.Join(dir, "tab"+itoaInt(tab))
 		fh, _ := os.Create(name + ".png")
 		png.Encode(fh, img)
 		fh.Close()

@@ -112,9 +112,8 @@ const (
 
 	timerAnim = 7
 
-	cFieldRef = 0x00200F09 // COLORREF (BGR) of colField (9,15,32)
-	cTextRef  = 0x00FFF3EC // colText (236,243,255)
-	cBgRef    = 0x0022110A // colBg (10,17,34)
+	ctlNtfy  = 212
+	ctlBPass = 213
 
 	panelStyle = wsCaption | wsSysMenu | wsMinimizeBox | wsMaximizeBox | wsThickFrame | wsClipChildren
 )
@@ -156,7 +155,32 @@ type minMaxInfo struct {
 	MaxTrack [2]int32
 }
 
-var editIDs = map[string]uintptr{"user": ctlUser, "pass": ctlPass, "delay": ctlDelay, "search": ctlSearch, "aamount": ctlAAmount, "abid": ctlABid, "apay": ctlAPay}
+// native text boxes take their colours from the current theme (COLORREF = 0x00BBGGRR)
+var cFieldRef, cTextRef, cBgRef uintptr
+
+func syncThemeRefs() {
+	cFieldRef, cTextRef, cBgRef = colorRef(colField), colorRef(colText), colorRef(colBg)
+	if brField != 0 {
+		pDeleteObject.Call(brField)
+		pDeleteObject.Call(bgBrush)
+	}
+	brField, bgBrush = makeBrush(cFieldRef), makeBrush(cBgRef)
+}
+
+// setThemeNow switches the whole window to a theme and saves the choice.
+func setThemeNow(name string) {
+	applyTheme(name)
+	syncThemeRefs()
+	hub.SetTheme(name)
+	for _, h := range edits {
+		pInvalidateRect.Call(h, 0, 1)
+	}
+	if panelHwnd != 0 {
+		pInvalidateRect.Call(panelHwnd, 0, 1)
+	}
+}
+
+var editIDs = map[string]uintptr{"ntfy": ctlNtfy, "bpass": ctlBPass, "user": ctlUser, "pass": ctlPass, "delay": ctlDelay, "search": ctlSearch, "aamount": ctlAAmount, "abid": ctlABid, "apay": ctlAPay}
 
 var (
 	panelClass = utf16Ptr("TrianguletOpenerPanel")
@@ -245,8 +269,7 @@ func createPanel() {
 	if panelHwnd != 0 {
 		return
 	}
-	brField = makeBrush(cFieldRef)
-	bgBrush = makeBrush(cBgRef)
+	syncThemeRefs()
 
 	cursor, _, _ := pLoadCursor.Call(0, 32512) // IDC_ARROW
 	icon := loadAppIcon()
@@ -287,7 +310,7 @@ func createPanel() {
 	pSelectObject.Call(memDC, bmp)
 	dibBits = unsafe.Slice((*byte)(unsafe.Pointer(bits)), winW*winH*4)
 
-	styles := map[string]uintptr{"pass": esPassword}
+	styles := map[string]uintptr{"pass": esPassword, "bpass": esPassword}
 	for name, id := range editIDs {
 		edits[name] = newEdit(styles[name], id)
 	}
@@ -295,6 +318,7 @@ func createPanel() {
 	setText(edits["user"], cfg.Username)
 	setText(edits["pass"], cfg.Password)
 	setText(edits["delay"], trimFloat(cfg.DelayMs))
+	setText(edits["ntfy"], cfg.NtfyTopic)
 	setText(edits["aamount"], "1")
 	setText(edits["abid"], "100")
 	setText(edits["apay"], "0")
@@ -724,6 +748,63 @@ func handleClick(id string) {
 		openPath(hub.logPath())
 	case strings.HasPrefix(id, "tab:"):
 		ui.Tab = atoiOr(id[4:], 0)
+		ui.Settings = false
+	case id == "settings":
+		ui.Settings = !ui.Settings
+		ui.SetMsg = ""
+	case strings.HasPrefix(id, "theme:"):
+		setThemeNow(themeNames[atoiOr(id[6:], 0)%len(themeNames)])
+	case id == "chkupd":
+		hub.CheckUpdateNow(true)
+	case id == "updcheck":
+		hub.update(func(c *Config) { c.NoUpdateCheck = !c.NoUpdateCheck })
+	case id == "autoupd":
+		hub.SetAutoUpdate(!c.AutoUpdate)
+	case id == "ntfyon":
+		applyNtfyTopic()
+		ui.SetMsg = hub.SetNtfyOn(!hub.cfg().NtfyOn)
+		if ui.SetMsg == "" && !hub.cfg().NtfyOn {
+			ui.SetMsg = "Type a topic name first (or press Random)."
+		}
+	case id == "ntfyrand":
+		hub.RandomNtfyTopic()
+		setText(edits["ntfy"], hub.cfg().NtfyTopic)
+		ui.SetMsg = "New private topic made. Subscribe to it in the ntfy app, then press Test."
+	case id == "ntfytest":
+		applyNtfyTopic()
+		ui.SetMsg = "Sending..."
+		go func() { m := hub.NtfyTest(); ui.SetMsg = m; dirty = true }()
+	case id == "bexport":
+		ui.SetMsg = "Working..."
+		pass := getText(edits["bpass"])
+		go func() {
+			p, err := hub.SaveBackupFile(pass)
+			if err != nil {
+				ui.SetMsg = "Backup failed: " + err.Error()
+			} else {
+				ui.SetMsg = "Saved: " + p + "  (keep your passphrase safe, it cannot be recovered)"
+			}
+			dirty = true
+		}()
+	case id == "bimport":
+		if messageBox2("Triangulet Opener", "Replace your current settings, logins and History with the newest backup file?", mbOKCancel|mbIconInformation) {
+			ui.SetMsg = "Working..."
+			pass := getText(edits["bpass"])
+			go func() {
+				p, err := hub.LoadBackupFile(pass)
+				if err != nil {
+					ui.SetMsg = "Import failed: " + err.Error()
+				} else {
+					ui.SetMsg = "Restored from " + p
+					c := hub.cfg()
+					applyTheme(c.Theme)
+					syncThemeRefs()
+					setText(edits["ntfy"], c.NtfyTopic)
+					syncLoginBoxes()
+				}
+				dirty = true
+			}()
+		}
 	case strings.HasPrefix(id, "pick:"):
 		ui.Sel = strings.TrimPrefix(id, "pick:")
 	}
@@ -842,6 +923,9 @@ func panelWndProc(hwnd, msg, wparam, lparam uintptr) uintptr {
 				if id == ctlDelay {
 					applyDelay()
 				}
+				if id == ctlNtfy {
+					applyNtfyTopic()
+				}
 				ui.moving = true
 				render()
 			}
@@ -888,4 +972,12 @@ func shortNotes(s string) string {
 		s = string(r[:400]) + "..."
 	}
 	return s
+}
+
+func applyNtfyTopic() {
+	if h := edits["ntfy"]; h != 0 {
+		if m := hub.SetNtfy(hub.cfg().NtfyOn, getText(h)); m != "" {
+			ui.SetMsg = m
+		}
+	}
 }

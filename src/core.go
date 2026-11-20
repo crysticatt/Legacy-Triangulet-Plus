@@ -56,6 +56,13 @@ type Config struct {
 	Accounts          []Account `json:"accounts"`      // saved logins to switch between
 	UpdateRepo        string    `json:"updateRepo"`    // GitHub owner/repo to check for new versions (empty = default)
 	NoUpdateCheck     bool      `json:"noUpdateCheck"` // never look for updates
+	Theme             string    `json:"theme"`         // dark, light or blue
+	NtfyOn            bool      `json:"ntfyOn"`        // send alerts to your phone through ntfy
+	NtfyTopic         string    `json:"ntfyTopic"`     // your private ntfy topic name
+	NtfyServer        string    `json:"ntfyServer"`    // empty = https://ntfy.sh
+	AutoUpdate        bool      `json:"autoUpdate"`    // install updates by itself (Windows: only while the window is hidden)
+	WhatsNewVer       string    `json:"whatsNewVer"`   // set when an update was installed: show its notes once
+	WhatsNewNotes     string    `json:"whatsNewNotes"`
 	AlertLowPacks     int       `json:"alertLowPacks"` // warn when fewer than this many packs are left (0 = off)
 }
 
@@ -172,6 +179,12 @@ func NewApp(dir string) *App {
 	path := filepath.Join(dir, "config.json")
 	if b, err := os.ReadFile(path); err == nil {
 		_ = json.Unmarshal(b, &a.cfg) // missing keys keep defaults
+		if openConfig(&a.cfg) {
+			a.logf("some saved logins could not be unlocked (config.json came from another PC or user?). Log in again.")
+		}
+		if sealImpl != nil && hasPlainSecret(string(b)) {
+			a.saveConfigLocked() // protect a password that an older version saved as plain text
+		}
 	} else {
 		a.saveConfigLocked()
 	}
@@ -197,7 +210,7 @@ func (a *App) saveConfigLocked() {
 	if a.noSave {
 		return
 	}
-	b, err := json.MarshalIndent(a.cfg, "", "  ")
+	b, err := json.MarshalIndent(sealConfig(a.cfg), "", "  ")
 	if err != nil {
 		return
 	}
@@ -832,7 +845,15 @@ type Snapshot struct {
 	UpdateNotes      string
 	UpdateBusy       bool
 	UpdateMsg        string
-	AcctIdx          int // which one is active (-1 = not saved)
+	UpdateNote       string // result of a manual "check for updates"
+	AutoUpdate       bool
+	Theme            string
+	NtfyOn           bool
+	NtfyTopic        string
+	NoUpdateCheck    bool
+	Protected        bool   // saved passwords are encrypted on this PC
+	WhatsNew         string // release notes of the version just installed (empty = nothing to show)
+	AcctIdx          int    // which one is active (-1 = not saved)
 	Hist             []HistBucket
 	SpeedMsg         string
 	SpeedBusy        bool

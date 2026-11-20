@@ -112,6 +112,7 @@ var alertHook func(kind string)
 // alert queues a tray notification and (if enabled) plays a sound.
 func (h *Hub) alert(kind, title, text string) {
 	h.primary.pushBalloon(title, text)
+	h.bg(func() { h.ntfyAlert(kind, title, text) })
 	if hook := alertHook; hook != nil && h.cfg().AlertSound {
 		hook(kind)
 	}

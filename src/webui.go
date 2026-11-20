@@ -4,6 +4,7 @@ package main
 
 import (
 	_ "embed"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -67,6 +68,8 @@ func (w *webServer) handler() http.Handler {
 		_, _ = rw.Write(b)
 	})
 	mux.HandleFunc("/api/do", w.doAction)
+	mux.HandleFunc("/api/backup/export", w.backupExport)
+	mux.HandleFunc("/api/backup/import", w.backupImport)
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		if !w.allowedHost(r.Host) {
 			http.Error(rw, "forbidden", http.StatusForbidden)
@@ -127,19 +130,76 @@ type doReq struct {
 	Pay    int     `json:"pay"`
 }
 
+// guard lets only this dashboard's own page act: a page on another site can't send the header
+// without a CORS check we never grant.
+func guard(rw http.ResponseWriter, r *http.Request) bool {
+	if r.Method != http.MethodPost || r.Header.Get("X-Opener") != "1" || !strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
+		rw.WriteHeader(403)
+		writeJSON(rw, map[string]any{"error": "forbidden"})
+		return false
+	}
+	return true
+}
+
+func (w *webServer) backupExport(rw http.ResponseWriter, r *http.Request) {
+	if !guard(rw, r) {
+		return
+	}
+	var q struct {
+		Pass string `json:"pass"`
+	}
+	if json.NewDecoder(io.LimitReader(r.Body, 4<<10)).Decode(&q) != nil {
+		rw.WriteHeader(400)
+		writeJSON(rw, map[string]any{"error": "bad request"})
+		return
+	}
+	b, err := w.hub.ExportBackup(q.Pass)
+	if err != nil {
+		rw.WriteHeader(400)
+		writeJSON(rw, map[string]any{"error": err.Error()})
+		return
+	}
+	rw.Header().Set("Content-Type", "application/octet-stream")
+	rw.Header().Set("Content-Disposition", `attachment; filename="`+backupFileName()+`"`)
+	_, _ = rw.Write(b)
+}
+
+func (w *webServer) backupImport(rw http.ResponseWriter, r *http.Request) {
+	if !guard(rw, r) {
+		return
+	}
+	var q struct {
+		Pass string `json:"pass"`
+		Data string `json:"data"`
+	}
+	if json.NewDecoder(io.LimitReader(r.Body, 24<<20)).Decode(&q) != nil {
+		rw.WriteHeader(400)
+		writeJSON(rw, map[string]any{"error": "bad request"})
+		return
+	}
+	raw, err := base64.StdEncoding.DecodeString(q.Data)
+	if err == nil {
+		err = w.hub.ImportBackup(raw, q.Pass)
+	}
+	if err != nil {
+		rw.WriteHeader(400)
+		writeJSON(rw, map[string]any{"error": err.Error()})
+		return
+	}
+	writeJSON(rw, map[string]any{"ok": true, "msg": "Restored from the backup."})
+}
+
 func (w *webServer) doAction(rw http.ResponseWriter, r *http.Request) {
+	note := ""
 	reply := func(err error) {
 		if err != nil {
 			rw.WriteHeader(400)
 			writeJSON(rw, map[string]any{"error": err.Error()})
 			return
 		}
-		writeJSON(rw, map[string]any{"ok": true})
+		writeJSON(rw, map[string]any{"ok": true, "msg": note})
 	}
-	// A page on another site can't send this header without a CORS check we never grant.
-	if r.Method != http.MethodPost || r.Header.Get("X-Opener") != "1" || !strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
-		rw.WriteHeader(403)
-		writeJSON(rw, map[string]any{"error": "forbidden"})
+	if !guard(rw, r) {
 		return
 	}
 	var q doReq
@@ -207,7 +267,24 @@ func (w *webServer) doAction(rw http.ResponseWriter, r *http.Request) {
 	case "speedtest":
 		h.MeasureLimits()
 	case "checkupdate":
-		h.CheckUpdateNow()
+		h.CheckUpdateNow(true)
+	case "autoupdate":
+		h.SetAutoUpdate(q.On)
+	case "updcheck":
+		h.update(func(c *Config) { c.NoUpdateCheck = !q.On })
+	case "theme":
+		h.SetTheme(q.S)
+	case "ntfy":
+		if m := h.SetNtfy(q.On, q.S); m != "" {
+			reply(errors.New(m))
+			return
+		}
+	case "ntfyrand":
+		h.RandomNtfyTopic()
+	case "ntfytest":
+		note = h.NtfyTest()
+	case "whatsnew":
+		h.DismissWhatsNew()
 	case "update":
 		if w.applyUpd == nil {
 			reply(errors.New("not supported here"))

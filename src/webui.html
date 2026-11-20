@@ -9,8 +9,11 @@
   --bg:#0a1122;--panel:#0d162c;--card:#121e3a;--edge:#22345e;--field:#091020;
   --accent:#3b8cff;--accentd:#2868d6;--cyan:#5ce1ff;--text:#ecf3ff;--muted:#8ca0cc;--dim:#5c709e;
   --good:#42d684;--bad:#ec5462;--badd:#be3848;--warn:#ffc45c;
+  --cardhi:#162646;--track:#1a2748;--goodbg:#12342c;--knob:#7f93c4;
   --r-Uncommon:#4ade80;--r-Rare:#3b8cff;--r-Epic:#a566ff;--r-Legendary:#ff9f2e;--r-Chroma:#2ee6d0;--r-Mystical:#ff4fa3;--r-Unique:#ffd84a;
 }
+[data-theme=light]{--bg:#e8edf7;--panel:#f3f6fc;--card:#fff;--edge:#cbd5ea;--field:#f7f9fd;--accent:#256ce0;--accentd:#1c54ba;--cyan:#087cb6;--text:#16203a;--muted:#4e5e82;--dim:#7886a4;--good:#129654;--bad:#ce2e42;--badd:#ba263a;--warn:#be7608;--cardhi:#e7eefc;--track:#b2bed6;--goodbg:#dcf4e7;--knob:#fff}
+[data-theme=blue]{--bg:#051840;--panel:#082152;--card:#0d2e68;--edge:#2858a4;--field:#051332;--accent:#48acff;--accentd:#2882e2;--cyan:#7eecff;--text:#f0f7ff;--muted:#98bceb;--dim:#6890c8;--good:#48dc8c;--bad:#f45c6a;--badd:#c43a4c;--warn:#ffc860;--cardhi:#143c80;--track:#244e92;--goodbg:#0d3a52;--knob:#b8d4ff}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:13px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
 button,input,select{font:inherit;color:inherit}
@@ -27,7 +30,7 @@ button,input,select{font:inherit;color:inherit}
 .sp{flex:1}
 .pill{display:flex;align-items:center;gap:7px;border:1px solid var(--edge);background:var(--card);border-radius:14px;padding:4px 12px;font-weight:700;font-size:12px;color:var(--muted)}
 .pill i{width:9px;height:9px;border-radius:50%;background:var(--dim)}
-.pill.on{border-color:var(--good);color:var(--good);background:#12342c}
+.pill.on{border-color:var(--good);color:var(--good);background:var(--goodbg)}
 .pill.on i{background:var(--good);animation:pulse 1.4s infinite}
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(66,214,132,.5)}100%{box-shadow:0 0 0 9px rgba(66,214,132,0)}}
 .card{background:var(--card);border:1px solid var(--edge);border-radius:12px;padding:10px 12px}
@@ -40,13 +43,13 @@ button,input,select{font:inherit;color:inherit}
 input[type=text],input[type=password],input[type=number],select{background:var(--field);border:1px solid var(--edge);border-radius:9px;padding:6px 9px;width:100%;outline:none}
 input:focus,select:focus{border-color:var(--accent)}
 .btn{border:1px solid var(--edge);background:var(--card);border-radius:9px;padding:6px 12px;cursor:pointer;transition:.12s}
-.btn:hover{border-color:var(--accent);background:#162646}
+.btn:hover{border-color:var(--accent);background:var(--cardhi)}
 .btn:active{transform:scale(.97)}
-.btn.p{background:var(--accent);border-color:var(--accent);font-weight:600}
-.btn.p:hover{background:#4d98ff}
-.btn.stop{background:var(--badd);border-color:var(--badd);font-weight:700}
+.btn.p{background:var(--accent);border-color:var(--accent);font-weight:600;color:#fff}
+.btn.p:hover{background:var(--accentd)}
+.btn.stop{background:var(--badd);border-color:var(--badd);font-weight:700;color:#fff}
 .btn.stop:hover{background:#d4414f}
-.btn.go{background:var(--accent);border-color:var(--accent);font-weight:700}
+.btn.go{background:var(--accent);border-color:var(--accent);font-weight:700;color:#fff}
 .btn.s{padding:2px 9px;font-size:11px;border-radius:7px}
 .btn.big{padding:10px;font-size:14px;flex:1}
 .btn[disabled]{opacity:.45;cursor:default}
@@ -56,15 +59,15 @@ input:focus,select:focus{border-color:var(--accent)}
 .seg button:not(.on):hover{color:var(--text)}
 .chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
 .chip{border:1px solid var(--edge);background:var(--field);border-radius:8px;padding:5px 0;cursor:pointer;font-size:12px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.chip.on{background:var(--accent);border-color:var(--accent);font-weight:600}
+.chip.on{background:var(--accent);border-color:var(--accent);font-weight:600;color:#fff}
 .stepper{display:flex;align-items:center;background:var(--field);border:1px solid var(--edge);border-radius:9px}
 .stepper button{border:0;background:none;width:28px;height:28px;cursor:pointer;color:var(--muted);font-size:15px}
 .stepper button:hover{color:var(--text)}
 .stepper span{flex:1;text-align:center;font-weight:600}
 .cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .tog{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;background:var(--field);border:1px solid var(--edge);border-radius:9px;padding:5px 9px;flex:1;font-size:12px}
-.tog b{width:30px;height:16px;border-radius:8px;background:#1a2748;position:relative;flex:none;transition:.15s}
-.tog b:after{content:"";position:absolute;left:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#7f93c4;transition:.15s}
+.tog b{width:30px;height:16px;border-radius:8px;background:var(--track);position:relative;flex:none;transition:.15s}
+.tog b:after{content:"";position:absolute;left:2px;top:2px;width:12px;height:12px;border-radius:50%;background:var(--knob);transition:.15s}
 .tog.on b{background:var(--accent)}
 .tog.on b:after{left:16px;background:#fff}
 .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
@@ -90,7 +93,7 @@ td,th{padding:6px 8px;text-align:left}
 th{font-size:10px;color:var(--muted);letter-spacing:.04em}
 tr{background:var(--field)}tr+tr td{border-top:3px solid var(--card)}
 td:first-child{border-radius:8px 0 0 8px}td:last-child{border-radius:0 8px 8px 0}
-.badge{background:#12342c;color:var(--good);border-radius:5px;padding:1px 6px;font-size:10px;font-weight:700}
+.badge{background:var(--goodbg);color:var(--good);border-radius:5px;padding:1px 6px;font-size:10px;font-weight:700}
 .mini{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:8px 0}
 .mini .v{font-size:20px;font-weight:700}
 .chartbox{background:var(--field);border-radius:10px;padding:10px;margin-top:8px}
@@ -99,6 +102,11 @@ svg{display:block;width:100%}
 .toast{position:fixed;bottom:16px;right:16px;background:var(--card);border:1px solid var(--edge);border-radius:10px;padding:10px 14px;max-width:340px;box-shadow:0 8px 30px rgba(0,0,0,.4);display:none}
 .toast.show{display:block}
 .toast.bad{border-color:var(--bad)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:20;padding:16px}
+.modal.show{display:flex}
+.sheet{background:var(--panel);border:1px solid var(--edge);border-radius:14px;width:560px;max-width:100%;max-height:92vh;overflow:auto;padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.sheet h2{margin:0;font-size:17px}
+.sec{border-top:1px solid var(--edge);padding-top:10px;display:flex;flex-direction:column;gap:7px}
 .empty{color:var(--dim);text-align:center;padding:30px 0}
 .rbar{display:grid;grid-template-columns:100px 1fr 60px 60px;align-items:center;gap:8px;padding:3px 0}
 </style>
@@ -139,7 +147,7 @@ svg{display:block;width:100%}
     </div>
     <div class="sp"></div>
     <div class="err" id="err"></div>
-    <div class="row"><button class="btn big go" id="start">Start opening</button><button class="btn" id="quit" title="Stop opening and close the opener completely">Quit</button></div>
+    <div class="row"><button class="btn big go" id="start">Start opening</button><button class="btn" id="settingsBtn">Settings</button><button class="btn" id="quit" title="Stop opening and close the opener completely">Quit</button></div>
   </div>
 
   <div class="right">
@@ -153,6 +161,22 @@ svg{display:block;width:100%}
     <div class="card view" id="view" style="min-height:300px"></div>
   </div>
 </div>
+<div class="modal" id="modal"><div class="sheet">
+  <div class="row top" style="margin:0"><h2>Settings</h2><button class="btn s" id="setClose">Close</button></div>
+  <div class="sec"><span class="lab">THEME</span><div class="seg" id="themeSeg"><button data-v="dark">Dark</button><button data-v="light">Light</button><button data-v="blue">Blue</button></div></div>
+  <div class="sec"><div class="row"><span class="lab" style="flex:1">UPDATES</span><button class="btn s" id="chkUpd">Check for updates</button></div>
+    <div class="dim" id="updNote"></div>
+    <div class="row"><div class="tog" id="tUpdCheck"><b></b>Look for updates</div><div class="tog" id="tAutoUpd"><b></b>Install by itself</div></div></div>
+  <div class="sec"><span class="lab">PASSWORD</span><div class="dim" id="protNote"></div></div>
+  <div class="sec"><span class="lab">PHONE ALERTS (ntfy)</span><div class="dim">Install the ntfy app, subscribe to your topic, and rare pulls and warnings arrive on your phone. Anyone who knows the topic name can read it, so keep it random.</div>
+    <div class="row"><input type="text" id="ntfyTopic" placeholder="topic name" autocomplete="off"><button class="btn s" id="ntfyRand">Random</button><button class="btn s" id="ntfyTest">Test</button></div>
+    <div class="row"><div class="tog" id="tNtfy"><b></b>Send alerts to my phone</div></div></div>
+  <div class="sec"><span class="lab">BACKUP</span><div class="dim">One encrypted file with your settings, logins and History. Choose a passphrase (6+ characters) and keep it: it cannot be recovered.</div>
+    <input type="password" id="bpass" placeholder="passphrase" autocomplete="off">
+    <div class="row"><button class="btn p" id="bExport">Export backup</button><button class="btn" id="bImport">Import backup...</button><input type="file" id="bFile" accept=".tribackup" style="display:none"></div></div>
+  <div class="dim" id="setMsg" style="min-height:16px"></div>
+</div></div>
+<div class="whatsnew modal" id="wn"><div class="sheet"><h2 id="wnTitle">Updated</h2><div id="wnBody" style="white-space:pre-wrap"></div><div class="row"><button class="btn p" id="wnOk">Got it</button></div></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -231,6 +255,13 @@ function render(){
   {const has=!!(s.UpdateVer||s.UpdateMsg);$("updrow").style.display=has?"flex":"none";
    $("updline").textContent=s.UpdateMsg?s.UpdateMsg:(s.UpdateVer?"Version "+s.UpdateVer+" is available":"");
    $("updbtn").textContent=s.UpdateBusy?"Updating...":(s.UpdateMsg?"Retry":"Update");$("updbtn").disabled=!!s.UpdateBusy;$("updbtn").style.display=s.UpdateVer?"":"none";}
+  applyTheme(s.Theme);
+  document.querySelectorAll("#themeSeg button").forEach(b=>b.className=b.dataset.v===s.Theme?"on":"");
+  $("tUpdCheck").className="tog"+(s.NoUpdateCheck?"":" on");$("tAutoUpd").className="tog"+(s.AutoUpdate?" on":"");$("tNtfy").className="tog"+(s.NtfyOn?" on":"");
+  $("updNote").textContent=s.UpdateVer?("Version "+s.UpdateVer+" is available (see the Update button on the left)"):(s.UpdateNote||("You are on version "+o.Version));
+  $("protNote").textContent=s.Protected?"Saved passwords are kept in your Mac's Keychain, not in config.json.":"Saved passwords are kept as plain text in config.json on this system. Keep that file private.";
+  $("protNote").style.color=s.Protected?"var(--good)":"var(--warn)";
+  if(s.WhatsNew&&!$("wn").classList.contains("show")){$("wnTitle").textContent="Updated to version "+o.Version;$("wnBody").textContent=s.WhatsNew;$("wn").classList.add("show")}
   $("speedtest").textContent=s.SpeedBusy?"Testing...":"Test limits";$("speedtest").disabled=!!s.SpeedBusy;
   $("tLogin").className="tog"+(o.LoginItem?" on":"");$("tLogin").style.display=o.CanLogin?"":"none";
   $("tDiscord").className="tog"+(o.DiscordOn?" on":"");
@@ -394,6 +425,39 @@ const applyDelay=()=>{const f=parseFloat($("delay").value.replace(",","."));if(i
 $("delay").onchange=applyDelay;$("delay").onkeydown=e=>{if(e.key==="Enter"){applyDelay();$("delay").blur()}};
 $("updbtn").onclick=()=>{if(confirm("Install the update and restart the opener?"))act("update")};
 $("speedtest").onclick=()=>act("speedtest");
+// ---- settings ----
+function applyTheme(t){document.documentElement.setAttribute("data-theme",t||"dark")}
+function setMsg(m){$("setMsg").textContent=m||""}
+async function actMsg(a,extra){
+  try{const r=await fetch("/api/do",{method:"POST",headers:{"Content-Type":"application/json","X-Opener":"1"},body:JSON.stringify(Object.assign({a},extra||{}))});
+    const j=await r.json();setMsg(j.error||j.msg||"");poll();return j}catch(e){setMsg("Lost connection to the opener.")}}
+$("settingsBtn").onclick=()=>{$("modal").classList.add("show");if(ST){$("ntfyTopic").value=ST.Snap.NtfyTopic||""}};
+$("setClose").onclick=()=>{$("modal").classList.remove("show");setMsg("")};
+$("modal").onclick=e=>{if(e.target===$("modal"))$("setClose").onclick()};
+document.querySelectorAll("#themeSeg button").forEach(b=>b.onclick=()=>{applyTheme(b.dataset.v);act("theme",{s:b.dataset.v})});
+$("chkUpd").onclick=()=>actMsg("checkupdate");
+$("tUpdCheck").onclick=()=>actMsg("updcheck",{on:!!ST.Snap.NoUpdateCheck});
+$("tAutoUpd").onclick=()=>actMsg("autoupdate",{on:!ST.Snap.AutoUpdate});
+$("ntfyRand").onclick=async()=>{await actMsg("ntfyrand");await poll();$("ntfyTopic").value=ST.Snap.NtfyTopic||"";setMsg("New private topic made. Subscribe to it in the ntfy app, then press Test.")};
+$("ntfyTest").onclick=async()=>{await actMsg("ntfy",{on:!!ST.Snap.NtfyOn,s:$("ntfyTopic").value});await actMsg("ntfytest")};
+$("tNtfy").onclick=()=>actMsg("ntfy",{on:!ST.Snap.NtfyOn,s:$("ntfyTopic").value});
+$("ntfyTopic").onchange=()=>actMsg("ntfy",{on:!!ST.Snap.NtfyOn,s:$("ntfyTopic").value});
+$("bExport").onclick=async()=>{
+  setMsg("Working...");
+  try{const r=await fetch("/api/backup/export",{method:"POST",headers:{"Content-Type":"application/json","X-Opener":"1"},body:JSON.stringify({pass:$("bpass").value})});
+    if(!r.ok){setMsg((await r.json()).error||"Backup failed");return}
+    const blob=await r.blob(),a=document.createElement("a");a.href=URL.createObjectURL(blob);
+    a.download=(r.headers.get("Content-Disposition")||"").replace(/.*filename="?([^"]+)"?.*/,"$1")||"TrianguletOpener.tribackup";a.click();setMsg("Backup downloaded. Keep your passphrase safe.")
+  }catch(e){setMsg("Lost connection to the opener.")}};
+$("bImport").onclick=()=>$("bFile").click();
+$("bFile").onchange=async()=>{
+  const f=$("bFile").files[0];$("bFile").value="";if(!f)return;
+  if(!confirm("Replace your current settings, logins and History with this backup?"))return;
+  setMsg("Working...");
+  try{const buf=new Uint8Array(await f.arrayBuffer());let s="";for(let i=0;i<buf.length;i+=8192)s+=String.fromCharCode.apply(null,buf.subarray(i,i+8192));
+    const r=await fetch("/api/backup/import",{method:"POST",headers:{"Content-Type":"application/json","X-Opener":"1"},body:JSON.stringify({pass:$("bpass").value,data:btoa(s)})});
+    const j=await r.json();setMsg(j.error||j.msg||"Restored.");poll()}catch(e){setMsg("Could not read that file.")}};
+$("wnOk").onclick=()=>{$("wn").classList.remove("show");act("whatsnew")};
 $("tLogin").onclick=()=>act("loginitem",{on:!ST.LoginItem});
 $("tDiscord").onclick=()=>act("discord",{on:!ST.DiscordOn});
 

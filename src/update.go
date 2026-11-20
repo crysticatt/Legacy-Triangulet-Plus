@@ -269,7 +269,8 @@ func (a *App) DownloadUpdate(info *UpdateInfo, dest string) error {
 // ---------- hub side ----------
 
 // CheckUpdateNow runs a check in the background and keeps the result for the window.
-func (h *Hub) CheckUpdateNow() {
+// manual is true when the person pressed "Check for updates" (so "up to date" is reported).
+func (h *Hub) CheckUpdateNow(manual bool) {
 	h.mu.Lock()
 	if h.updBusy {
 		h.mu.Unlock()
@@ -277,17 +278,36 @@ func (h *Hub) CheckUpdateNow() {
 	}
 	h.updBusy = true
 	h.updTried = time.Now()
+	if manual {
+		h.updNote = "Checking..."
+	}
 	h.mu.Unlock()
 	h.bg(func() {
 		info, err := h.primary.CheckUpdate()
 		h.mu.Lock()
 		h.updBusy = false
-		if err != nil {
+		switch {
+		case err != nil:
 			h.primary.logf("update check: %v", err)
-		} else {
+			if manual {
+				h.updNote = "Could not check: " + err.Error()
+			}
+		default:
 			h.upd = info
+			if manual {
+				h.updNote = "You have the latest version (v" + appVersion + ")"
+				if info != nil {
+					h.updNote = "Version " + info.Version + " is available"
+				}
+			}
 		}
+		auto := err == nil && info != nil && h.applyUpd != nil && h.cfg().AutoUpdate && (h.canAuto == nil || h.canAuto())
+		apply := h.applyUpd
 		h.mu.Unlock()
+		if auto {
+			h.primary.logf("installing update v%s automatically", info.Version)
+			h.InstallUpdate(apply)
+		}
 	})
 }
 
@@ -298,11 +318,23 @@ func (h *Hub) maybeCheckUpdate() {
 	}
 	h.mu.Lock()
 	due := (h.updTried.IsZero() && time.Since(h.bootAt) > 8*time.Second) || (!h.updTried.IsZero() && time.Since(h.updTried) > updateEvery)
+	pending := h.upd != nil && !h.updBusy && h.updMsg == "" && h.applyUpd != nil && h.cfg().AutoUpdate && (h.canAuto == nil || h.canAuto())
+	apply := h.applyUpd
 	h.mu.Unlock()
-	if due {
-		h.CheckUpdateNow()
+	if pending { // an update found earlier while the window was open: install once it is hidden
+		h.InstallUpdate(apply)
+	} else if due {
+		h.CheckUpdateNow(false)
 	}
 }
+
+// DismissWhatsNew hides the release notes shown after an update.
+func (h *Hub) DismissWhatsNew() {
+	h.update(func(c *Config) { c.WhatsNewVer, c.WhatsNewNotes = "", "" })
+}
+
+// SetAutoUpdate turns installing updates by itself on or off.
+func (h *Hub) SetAutoUpdate(on bool) { h.update(func(c *Config) { c.AutoUpdate = on }) }
 
 // InstallUpdate downloads the pending update and hands the new file to apply (which swaps the
 // program and restarts it). apply is system-specific.
@@ -331,8 +363,12 @@ func (h *Hub) InstallUpdate(apply func(newExe string) error) {
 		h.mu.Lock()
 		h.updMsg = "Installing..."
 		h.mu.Unlock()
+		// show the release notes once the new version starts
+		ver := strings.Join(strings.FieldsFunc(info.Version, func(r rune) bool { return r == '.' }), ".")
+		h.update(func(c *Config) { c.WhatsNewVer, c.WhatsNewNotes = ver, strings.TrimSpace(info.Notes) })
 		if err := apply(dest); err != nil {
 			_ = os.Remove(dest)
+			h.update(func(c *Config) { c.WhatsNewVer, c.WhatsNewNotes = "", "" })
 			set("Update failed: " + err.Error())
 			return
 		}

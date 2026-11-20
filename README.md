@@ -67,9 +67,16 @@ show your friends what you're doing: **"opening capsules"** appears as your disc
 - **auction**: list trians for sale.
 - **alerts**: sound and tray notice for rare pulls, goal reached, low packs, out of coins, or a wrong login.
 
+### settings (button at the bottom left)
+- **theme**: dark, light or blue.
+- **updates**: check now, turn the check off, or install updates by themselves while the window is hidden. after an update, a "what's new" box shows the release notes once.
+- **password protection**: your saved password is encrypted for this pc (windows) or kept in the keychain (mac), not stored as plain text.
+- **phone alerts**: rare pulls and warnings sent to your phone with the free [ntfy](https://ntfy.sh) app. make a random private topic, subscribe, press test.
+- **backup**: export your settings, logins and history as one passphrase-encrypted file, and import it on another pc.
+
 ### more
 - **multiple accounts**: save several logins and switch with `<` `>`. opening restarts on the new account if it was running.
-- **updates**: checks this repo's latest release (windows and mac) and shows an **update** button when there is a newer version. it downloads only from github and checks the file against github's checksum before installing. turn the check off with `"noupdatecheck": true` in `config.json`.
+- **updates**: checks this repo's latest release (windows and mac) and shows an **update** button when there is a newer version. it downloads only from github and checks the file against github's checksum before installing. you can turn the check off in settings.
 - resizable 16:9 window that hides to the tray.
 
 ---

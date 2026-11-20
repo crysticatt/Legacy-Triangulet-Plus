@@ -50,6 +50,9 @@ type Hub struct {
 	upd      *UpdateInfo
 	updBusy  bool
 	updMsg   string
+	updNote  string
+	canAuto  func() bool               // may an update be installed by itself right now?
+	applyUpd func(newExe string) error // swaps the program and restarts (set by main)
 	updTried time.Time
 	bootAt   time.Time
 
@@ -567,7 +570,16 @@ func (h *Hub) Snapshot() Snapshot {
 	if h.upd != nil {
 		s.UpdateVer, s.UpdateNotes = h.upd.Version, h.upd.Notes
 	}
-	s.UpdateBusy, s.UpdateMsg = h.updBusy, h.updMsg
+	s.UpdateBusy, s.UpdateMsg, s.UpdateNote = h.updBusy, h.updMsg, h.updNote
+	s.AutoUpdate = cfg.AutoUpdate
+	s.Theme, s.NtfyOn, s.NtfyTopic, s.NoUpdateCheck = normTheme(cfg.Theme), cfg.NtfyOn, cfg.NtfyTopic, cfg.NoUpdateCheck
+	s.Protected = sealImpl != nil
+	if cfg.WhatsNewVer == appVersion {
+		s.WhatsNew = cfg.WhatsNewNotes
+		if s.WhatsNew == "" {
+			s.WhatsNew = "Updated to version " + appVersion + "."
+		}
+	}
 	list, idx := h.Accounts()
 	for _, a := range list {
 		s.AcctNames = append(s.AcctNames, a.Name)

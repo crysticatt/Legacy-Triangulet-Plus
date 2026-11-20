@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-const appVersion = "36"
+const appVersion = "37"
 
 var tabNames = []string{"Trians", "Stats", "Hunt", "Log", "History", "Auction"}
 
@@ -225,11 +225,12 @@ func (p *painter) speedCard() {
 func (p *painter) startRow() {
 	s := p.s
 	if s.Running {
-		p.button("start", Rect{16, 492, 236, 36}, "Stop opening", colBadD, 0, 14)
+		p.button("start", Rect{16, 492, 140, 36}, "Stop opening", colBadD, 0, 14)
 	} else {
-		p.button("start", Rect{16, 492, 236, 36}, "Start opening", colAccent, 0, 14)
+		p.button("start", Rect{16, 492, 140, 36}, "Start opening", colAccent, 0, 14)
 	}
-	p.button("hide", Rect{260, 492, 96, 36}, "Hide to tray", colCard, 1, 12)
+	p.button("hide", Rect{164, 492, 88, 36}, "Hide to tray", colCard, 1, 12)
+	p.button("settings", Rect{260, 492, 96, 36}, "Settings", lerpCol(colCard, colAccent, b2f(p.st.Settings)*0.5), 1, 12)
 }
 
 func (p *painter) tile(r Rect, label string, value float64, sub string, valueText string) {
@@ -274,19 +275,25 @@ func (p *painter) tabs() {
 		id := "tab:" + itoaInt(i)
 		r := Rect{bar.X + i*tw, bar.Y, tw, bar.H - 2}
 		col := lerpCol(colMuted, colText, st.hv(id))
-		if i == st.Tab {
+		if i == st.Tab && !st.Settings {
 			col = colText
 		}
-		p.text(r, n, 13, i == st.Tab, col, 1)
+		p.text(r, n, 13, i == st.Tab && !st.Settings, col, 1)
 		p.f.hit(r, id)
 	}
 	c.Line(float64(bar.X), float64(bar.Y+bar.H), float64(bar.X+bar.W), float64(bar.Y+bar.H), 1, colEdge)
 	ux := float64(bar.X) + pos*float64(tw) + 16
-	c.RoundRect(Rect{int(ux), bar.Y + bar.H - 2, tw - 32, 3}, 1.5, colAccent)
+	if !st.Settings {
+		c.RoundRect(Rect{int(ux), bar.Y + bar.H - 2, tw - 32, 3}, 1.5, colAccent)
+	}
+	eff := st.Tab
+	if st.Settings {
+		eff = 99
+	}
 
 	// content
-	if st.lastTab != st.Tab {
-		st.lastTab = st.Tab
+	if st.lastTab != eff {
+		st.lastTab = eff
 		st.enter = 0
 		st.disp["sg:graph"] = 0
 		for k := range st.disp {
@@ -301,18 +308,20 @@ func (p *painter) tabs() {
 	content := Rect{388, 130, 556, 398}
 	p.card(content, colCard)
 	from := len(p.f.Texts)
-	switch st.Tab {
-	case 0:
+	switch {
+	case st.Settings:
+		p.viewSettings(content)
+	case st.Tab == 0:
 		p.viewTrians(content)
-	case 1:
+	case st.Tab == 1:
 		p.viewStats(content)
-	case 2:
+	case st.Tab == 2:
 		p.viewHunt(content)
-	case 3:
+	case st.Tab == 3:
 		p.viewLog(content)
-	case 4:
+	case st.Tab == 4:
 		p.viewHistory(content)
-	case 5:
+	case st.Tab == 5:
 		p.viewAuction(content)
 	}
 	p.fade(content.Inset(1, 1), colCard, from, easeOut(st.enter))

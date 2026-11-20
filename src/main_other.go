@@ -189,6 +189,7 @@ func main() {
 	quitNow := func() { sig <- syscall.SIGTERM }
 	web := &webServer{hub: hub, port: portNum, loginItm: loginItemOn, setLogin: setLoginItem,
 		quit: quitNow, applyUpd: applyUpdateOther(quitNow)}
+	hub.applyUpd = web.applyUpd
 	srv := &http.Server{Handler: web.handler(), ReadHeaderTimeout: 10 * time.Second}
 	go srv.Serve(ln)
 	_ = os.WriteFile(filepath.Join(dataDir(), "web.port"), []byte(strconv.Itoa(portNum)), 0o600)

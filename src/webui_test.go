@@ -3,6 +3,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"net"
 	"net/http"
@@ -260,3 +261,86 @@ func rebaseHist(h []HistBucket) []HistBucket {
 	}
 	return out
 }
+
+func TestWebSettingsActions(t *testing.T) {
+	w, ts, _ := newWebTest(t)
+	h := w.hub
+	if code, _ := post(t, ts, `{"a":"theme","s":"light"}`, nil); code != 200 || h.cfg().Theme != "light" {
+		t.Fatalf("theme: %q", h.cfg().Theme)
+	}
+	post(t, ts, `{"a":"theme","s":"nonsense"}`, nil)
+	if h.cfg().Theme != "dark" {
+		t.Fatal("unknown theme not mapped to dark")
+	}
+	if code, _ := post(t, ts, `{"a":"ntfy","on":true,"s":"bad topic!"}`, nil); code != 400 {
+		t.Fatal("bad ntfy topic accepted")
+	}
+	if code, _ := post(t, ts, `{"a":"ntfy","on":true,"s":"tri-abcdef12"}`, nil); code != 200 || !h.cfg().NtfyOn || h.cfg().NtfyTopic != "tri-abcdef12" {
+		t.Fatalf("ntfy not set: %+v", h.cfg())
+	}
+	post(t, ts, `{"a":"ntfyrand"}`, nil)
+	if !strings.HasPrefix(h.cfg().NtfyTopic, "tri-") || len(h.cfg().NtfyTopic) != 20 {
+		t.Fatalf("random topic: %q", h.cfg().NtfyTopic)
+	}
+	post(t, ts, `{"a":"updcheck","on":false}`, nil)
+	if !h.cfg().NoUpdateCheck {
+		t.Fatal("update check not turned off")
+	}
+	post(t, ts, `{"a":"autoupdate","on":true}`, nil)
+	if !h.cfg().AutoUpdate {
+		t.Fatal("auto update not on")
+	}
+	post(t, ts, `{"a":"theme","s":"blue"}`, nil)
+	st := w.state()
+	if st.Snap.Theme != "blue" || !st.Snap.AutoUpdate || !st.Snap.NoUpdateCheck {
+		t.Fatalf("snapshot: %+v", st.Snap)
+	}
+}
+
+func TestWebBackupEndpoints(t *testing.T) {
+	w, ts, _ := newWebTest(t)
+	w.hub.update(func(c *Config) { c.Theme = "light" })
+	doJSON := func(path, body string, hdr bool) (*http.Response, []byte) {
+		req, _ := http.NewRequest("POST", ts.URL+path, strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		if hdr {
+			req.Header.Set("X-Opener", "1")
+		}
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		var buf strings.Builder
+		b := make([]byte, 4096)
+		for {
+			n, e := resp.Body.Read(b)
+			buf.Write(b[:n])
+			if e != nil {
+				break
+			}
+		}
+		return resp, []byte(buf.String())
+	}
+	if r, _ := doJSON("/api/backup/export", `{"pass":"secret pass"}`, false); r.StatusCode != 403 {
+		t.Fatal("export without header allowed")
+	}
+	if r, _ := doJSON("/api/backup/export", `{"pass":"abc"}`, true); r.StatusCode != 400 {
+		t.Fatal("short passphrase accepted")
+	}
+	r, file := doJSON("/api/backup/export", `{"pass":"secret pass"}`, true)
+	if r.StatusCode != 200 || !strings.Contains(r.Header.Get("Content-Disposition"), ".tribackup") {
+		t.Fatalf("export: %d %q", r.StatusCode, r.Header.Get("Content-Disposition"))
+	}
+	w.hub.update(func(c *Config) { c.Theme = "blue" })
+	body, _ := json.Marshal(map[string]string{"pass": "secret pass", "data": b64(file)})
+	if r, _ := doJSON("/api/backup/import", string(body), true); r.StatusCode != 200 || w.hub.cfg().Theme != "light" {
+		t.Fatalf("import: %d theme=%s", r.StatusCode, w.hub.cfg().Theme)
+	}
+	bad, _ := json.Marshal(map[string]string{"pass": "wrong wrong", "data": b64(file)})
+	if r, _ := doJSON("/api/backup/import", string(bad), true); r.StatusCode != 400 {
+		t.Fatal("wrong passphrase accepted")
+	}
+}
+
+func b64(b []byte) string { return base64.StdEncoding.EncodeToString(b) }

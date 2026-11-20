@@ -427,7 +427,10 @@ func main() {
 
 	hub = NewHub(dataDir())
 	imgHub = hub
-	requestTakeover(hub.primary.dir) // if the boot-time copy is running, it hands over to this one
+	applyTheme(hub.cfg().Theme)
+	hub.applyUpd = applyUpdate
+	hub.canAuto = func() bool { return !panelVisible() } // never restart under someone who is looking at the window
+	requestTakeover(hub.primary.dir)                     // if the boot-time copy is running, it hands over to this one
 	taskbarCreated, _, _ = pRegisterWindowMessage.Call(uintptr(unsafe.Pointer(utf16Ptr("TaskbarCreated"))))
 
 	hInst, _, _ := pGetModuleHandle.Call(0)
@@ -461,6 +464,13 @@ func main() {
 		showPanel()
 	}
 
+	go func() { // after an update: show what is new, once
+		time.Sleep(2500 * time.Millisecond)
+		if s := hub.Snapshot(); s.WhatsNew != "" {
+			hub.DismissWhatsNew()
+			messageBox("Triangulet Opener updated to v"+appVersion, shortNotes(s.WhatsNew), mbOK|mbIconInformation)
+		}
+	}()
 	go func() {
 		for range time.Tick(5 * time.Second) {
 			hub.primary.SaveStats()

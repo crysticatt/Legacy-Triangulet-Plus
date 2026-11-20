@@ -74,6 +74,8 @@ type UIState struct {
 	ShowPass           bool
 	StartupOn, BootOn  bool
 	Tab                int
+	Settings           bool           // the Settings page is open in place of the tabs
+	SetMsg             string         // result line on the Settings page
 	TriansView         int            // 0 = owned, 1 = missing
 	HistRange          int            // History tab: 0 = 24 h, 1 = 7 days, 2 = 30 days
 	Wall               time.Time      // clock for the History tab (zero = now); previews fix it
@@ -304,7 +306,7 @@ func (p *painter) toggle(id string, r Rect, label string, on bool) {
 	p.c.RoundRect(r, 8, lerpCol(colField, colCardHi, h))
 	p.c.RoundRectStroke(r, 8, 1, lerpCol(colEdge, colAccent, h*0.6))
 	sw := Rect{r.X + 8, r.Y + (r.H-16)/2, 30, 16}
-	p.c.RoundRect(sw, 8, lerpCol(RGB(40, 58, 100), colAccent, t))
+	p.c.RoundRect(sw, 8, lerpCol(colTrack, colAccent, t))
 	kx := float64(sw.X) + 8 + 14*t
 	p.c.Circle(kx, float64(sw.Y)+8, 6, RGB(255, 255, 255))
 	p.text(Rect{r.X + 46, r.Y, r.W - 50, r.H}, label, 12, false, lerpCol(colMuted, colText, h), 0)
