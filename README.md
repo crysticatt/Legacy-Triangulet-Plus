@@ -82,9 +82,12 @@ Everything is stored on your PC in `%APPDATA%\TrianguletOpener`: `config.json`, 
 
 ## Build from source
 
+The code is in the [`src`](src) folder (Windows app, Mac dashboard, and the Windows installer in `src/installer`).
+
 Needs [Go](https://go.dev/dl/) 1.21 or newer and Python with Pillow (only to make the icon resource).
 
 ```sh
+cd src
 python tools/genres.py 36
 set GOOS=windows
 set GOARCH=amd64
