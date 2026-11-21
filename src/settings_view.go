@@ -35,6 +35,7 @@ func (p *painter) viewSettings(r Rect) {
 
 	// security
 	row(154, "PASSWORD")
+	p.toggle("hourly", Rect{x + w - 190, r.Y + 148, 190, 20}, "Hourly summary", s.HourlySummary)
 	if s.Protected {
 		soft(172, "Saved passwords are encrypted for this PC, so a copied config.json is useless elsewhere.", colGood)
 	} else {

@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-const appVersion = "38"
+const appVersion = "39"
 
 var tabNames = []string{"Trians", "Stats", "Hunt", "Log", "History", "Auction"}
 

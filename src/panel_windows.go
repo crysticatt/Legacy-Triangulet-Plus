@@ -757,6 +757,8 @@ func handleClick(id string) {
 		ui.SetMsg = ""
 	case strings.HasPrefix(id, "theme:"):
 		setThemeNow(themeNames[atoiOr(id[6:], 0)%len(themeNames)])
+	case id == "hourly":
+		hub.update(func(c *Config) { c.HourlySummary = !c.HourlySummary })
 	case id == "awake":
 		hub.update(func(c *Config) { c.KeepAwake = !c.KeepAwake })
 	case id == "chkupd":

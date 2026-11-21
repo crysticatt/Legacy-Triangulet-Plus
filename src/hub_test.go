@@ -26,9 +26,12 @@ type fakeSite struct {
 	coins   int64
 	logins  int64
 	byCap   map[string]*int64
-	mystAt  int64 // every Nth open is a Mystical (0 = never)
-	failLog int64 // first N logins return no token
-	warms   int64 // GET / requests
+	mystAt  int64         // every Nth open is a Mystical (0 = never)
+	failLog int64         // first N logins return no token
+	warms   int64         // GET / requests
+	latency time.Duration // how long each open takes to answer
+	inNow   int64         // opens being answered right now
+	idle    int64         // samples where fewer than half the lanes had a request in flight
 }
 
 func newFakeSite(coins int64) *fakeSite {
@@ -66,6 +69,11 @@ func newFakeSite(coins int64) *fakeSite {
 			}
 			var b map[string]string
 			json.NewDecoder(r.Body).Decode(&b)
+			if f.latency > 0 {
+				atomic.AddInt64(&f.inNow, 1)
+				time.Sleep(f.latency)
+				atomic.AddInt64(&f.inNow, -1)
+			}
 			n := atomic.AddInt64(&f.opens, 1)
 			if c := f.byCap[b["capsule"]]; c != nil {
 				atomic.AddInt64(c, 1)
@@ -606,5 +614,31 @@ func TestHistSeriesGroupsAndCarries(t *testing.T) {
 	}
 	if m[21].Label != "Nov 10" || m[21].Coins != 900 || m[22].Coins != 900 || m[20].Coins != -1 {
 		t.Fatalf("30d coins: %+v", m[20:23])
+	}
+}
+
+// With many lanes and a slow answer, requests must keep flowing: the number in flight stays near the
+// number of lanes (no wave of requests, then a pause while they all finish and the next wave starts).
+func TestRequestsKeepFlowingWithoutPauses(t *testing.T) {
+	f := newFakeSite(1_000_000)
+	f.latency = 25 * time.Millisecond
+	h := newTestHub(t, f)
+	defer h.Close()
+	h.primary.cfg.Capsule = "OG"
+	h.primary.cfg.InFlight, h.primary.cfg.Workers = 24, 1
+	h.primary.cfg.DelayMs = 0.000001
+	h.Start()
+	waitFor(t, 5*time.Second, "requests flowing", func() bool { return atomic.LoadInt64(&f.opens) > 100 })
+	low, samples := 0, 0
+	for i := 0; i < 150; i++ {
+		time.Sleep(2 * time.Millisecond)
+		samples++
+		if atomic.LoadInt64(&f.inNow) < 12 {
+			low++
+		}
+	}
+	h.Stop()
+	if low*10 > samples { // more than 10% of the time the pipe was less than half full
+		t.Fatalf("pipe was less than half full in %d of %d samples", low, samples)
 	}
 }

@@ -8,6 +8,22 @@ import (
 	"time"
 )
 
+// webhookText posts a plain message (an embed with a title and text) to the Discord webhook, if one is set.
+func (h *Hub) webhookText(title, text string) {
+	cfg := h.cfg()
+	if cfg.WebhookURL == "" {
+		return
+	}
+	body, _ := json.Marshal(map[string]any{
+		"username": "Triangulet Opener",
+		"embeds":   []map[string]any{{"title": title, "description": text, "color": 0x3B8CFF}},
+	})
+	resp, err := (&http.Client{Timeout: 10 * time.Second}).Post(cfg.WebhookURL, "application/json", bytes.NewReader(body))
+	if err == nil {
+		resp.Body.Close()
+	}
+}
+
 // webhook posts a rare pull to a Discord webhook address, if one is set in config.json.
 func (h *Hub) webhook(r openResp, capsule string) {
 	cfg := h.cfg()

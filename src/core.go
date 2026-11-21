@@ -57,6 +57,7 @@ type Config struct {
 	UpdateRepo        string    `json:"updateRepo"`    // GitHub owner/repo to check for new versions (empty = default)
 	NoUpdateCheck     bool      `json:"noUpdateCheck"` // never look for updates
 	CfgVer            int       `json:"cfgVer"`        // settings file generation, for one-time upgrades
+	HourlySummary     bool      `json:"hourlySummary"` // each hour: a notification (and ntfy / Discord) with the last hour's numbers
 	KeepAwake         bool      `json:"keepAwake"`     // stop the PC sleeping while opening (the screen may still turn off)
 	Theme             string    `json:"theme"`         // dark, light or blue
 	NtfyOn            bool      `json:"ntfyOn"`        // send alerts to your phone through ntfy
@@ -173,6 +174,7 @@ func NewApp(dir string) *App {
 			CoinCost:       25,
 			HuntMissing:    true,
 			KeepAwake:      true,
+			HourlySummary:  true,
 			AutoUpdate:     true,
 			AlertSound:     true,
 			AlertLowPacks:  20,
@@ -650,18 +652,36 @@ func (a *App) loop(gen int) {
 		lanes = 1
 	}
 	var fails int64
+	// Bookkeeping for each pull (counters, log, history) runs on its own goroutine, so a lane can fire its
+	// next request the instant a reply arrives instead of queueing behind the other lanes' bookkeeping.
+	q := make(chan recItem, 8192)
+	var rec sync.WaitGroup
+	rec.Add(1)
+	go func() {
+		defer rec.Done()
+		for it := range q {
+			a.record(it.r, it.capsule)
+		}
+	}()
 	var wg sync.WaitGroup
 	for j := 0; j < lanes; j++ {
 		wg.Add(1)
 		go func(j int) {
 			defer wg.Done()
-			a.lane(gen, j, lanes, &fails)
+			a.lane(gen, j, lanes, &fails, q)
 		}(j)
 	}
 	wg.Wait()
+	close(q)
+	rec.Wait()
 }
 
-func (a *App) lane(gen, lane, lanes int, fails *int64) {
+type recItem struct {
+	r       openResp
+	capsule string
+}
+
+func (a *App) lane(gen, lane, lanes int, fails *int64, q chan<- recItem) {
 	var credit int64 // capsules this lane has already paid for
 	defer func() {
 		a.mu.Lock()
@@ -671,13 +691,14 @@ func (a *App) lane(gen, lane, lanes int, fails *int64) {
 			pool.returnLease(cost, credit)
 		}
 	}()
+	var lastSend time.Time
 	for a.active(gen) {
 		a.mu.Lock()
 		capsule := a.cfg.Capsule
 		delay := delayDur(a.cfg.DelayMs)
 		maxFails := int64(a.cfg.MaxErrorsInRow)
 		cost := int64(a.cfg.CoinCost)
-		slot, slots, t0 := a.slot, a.slots, a.started
+		slot, slots := a.slot, a.slots
 		pool := a.pool
 		a.mu.Unlock()
 		if slots < 1 {
@@ -710,13 +731,27 @@ func (a *App) lane(gen, lane, lanes int, fails *int64) {
 		if credit > 0 {
 			credit--
 		}
+		if delay > 0 { // this lane's own minimum spacing; lanes start spread out and are never tied to a shared clock
+			if lastSend.IsZero() {
+				if slots*lanes > 1 {
+					sleepPrecise(delay * time.Duration(slot*lanes+lane) / time.Duration(slots*lanes))
+				}
+			} else if d := time.Until(lastSend.Add(delay)); d > 0 {
+				sleepPrecise(d)
+			}
+		}
+		lastSend = time.Now()
 		r, err := a.openOnce(capsule)
 		if pool != nil {
 			pool.done(cost, err != nil)
 		}
 		if err == nil {
 			atomic.StoreInt64(fails, 0)
-			a.record(r, capsule)
+			select {
+			case q <- recItem{r, capsule}:
+			default: // queue full: do it here rather than lose a pull
+				a.record(r, capsule)
+			}
 		} else {
 			var ae authError
 			var re rateError
@@ -773,7 +808,6 @@ func (a *App) lane(gen, lane, lanes int, fails *int64) {
 			time.Sleep(wait)
 			continue
 		}
-		slotWait(t0, slot*lanes+lane, slots*lanes, delay)
 	}
 }
 
@@ -857,6 +891,7 @@ type Snapshot struct {
 	AutoUpdate       bool
 	Theme            string
 	KeepAwake        bool
+	HourlySummary    bool
 	NtfyOn           bool
 	NtfyTopic        string
 	NoUpdateCheck    bool

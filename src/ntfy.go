@@ -66,8 +66,11 @@ func (h *Hub) ntfyAlert(kind, title, text string) {
 		return
 	}
 	tags, pr := "tada", 4
-	if kind == "warn" {
+	switch kind {
+	case "warn":
 		tags, pr = "warning", 3
+	case "info":
+		tags, pr = "bar_chart", 2
 	}
 	if err := sendNtfy(ntfyBase(cfg), cfg.NtfyTopic, title, text, tags, pr); err != nil {
 		h.primary.logf("ntfy: %v", err)

@@ -47,6 +47,7 @@ type Hub struct {
 	speedMsg  string
 	speedBusy bool
 
+	sumHour  int64 // the clock hour whose summary is due next
 	upd      *UpdateInfo
 	updBusy  bool
 	updMsg   string
@@ -329,6 +330,7 @@ func (h *Hub) tick() {
 		})
 	}
 	h.maybeCheckUpdate()
+	h.maybeSummary()
 	if time.Since(h.lastHist) >= 20*time.Second {
 		h.lastHist = time.Now()
 		h.recordCoins(h.pool.get())
@@ -575,6 +577,7 @@ func (h *Hub) Snapshot() Snapshot {
 	s.Theme, s.NtfyOn, s.NtfyTopic, s.NoUpdateCheck = normTheme(cfg.Theme), cfg.NtfyOn, cfg.NtfyTopic, cfg.NoUpdateCheck
 	s.Protected = sealImpl != nil
 	s.KeepAwake = cfg.KeepAwake
+	s.HourlySummary = cfg.HourlySummary
 	if cfg.WhatsNewVer == appVersion {
 		s.WhatsNew = cfg.WhatsNewNotes
 		if s.WhatsNew == "" {
