@@ -51,19 +51,27 @@ func titleCapsule(lower string) string {
 
 // HuntRow is one capsule in the ranking.
 type HuntRow struct {
-	Capsule string
-	Odds    float64 // chance of a Mystical per capsule opened, in percent (0 = unknown)
-	NewOdds float64 // the part of Odds that is Mystical trians you don't own yet
-	NewMyst int     // Mystical trians of this capsule you don't own yet
-	Chasing bool    // ranked by NewOdds
-	Mystics int     // how many Mystical trians the capsule holds
-	Known   bool    // Odds came from real drop chances
-	Workers int     // how many workers are aimed at it right now
+	Capsule  string
+	Odds     float64 // chance of a Mystical per capsule opened, in percent (0 = unknown)
+	NewOdds  float64 // the part of Odds that is Mystical trians you don't own yet
+	NewMyst  int     // Mystical trians of this capsule you don't own yet
+	Chasing  bool    // ranked by NewOdds
+	Mystics  int     // how many Mystical trians the capsule holds
+	Known    bool    // Odds came from real drop chances
+	Workers  int     // how many workers are aimed at it right now
+	Pulls    int     // capsules of this type you have measured
+	Measured float64 // the Mystical rate you measured, in percent (0 if none)
 }
 
 // huntRanking ranks capsules, best first. capsules is the list from the site (or the
 // built-in list); chances is chanceKey(capsule, trian) -> percent.
 func huntRanking(capsules []string, chances map[string]float64, owned map[string]bool) []HuntRow {
+	return huntRankingM(capsules, chances, owned, nil)
+}
+
+// huntRankingM is huntRanking with measured results: measured[capsule lower-case] = {pulls, Mystical pulls}.
+// The advertised odds are blended with the measured ones, weighted by how many capsules were measured.
+func huntRankingM(capsules []string, chances map[string]float64, owned map[string]bool, measured map[string][2]int) []HuntRow {
 	if len(capsules) == 0 {
 		capsules = builtinCapsules
 	}
@@ -97,6 +105,13 @@ func huntRanking(capsules []string, chances map[string]float64, owned map[string
 			}
 		}
 		row.Odds = sum
+		if m, ok := measured[strings.ToLower(c)]; ok && m[0] > 0 && row.Known && sum > 0 {
+			pa := sum / 100
+			p := (pa*huntPrior + float64(m[1])) / (huntPrior + float64(m[0]))
+			row.Pulls, row.Measured = m[0], float64(m[1])/float64(m[0])*100
+			row.NewOdds *= p / pa
+			row.Odds = p * 100
+		}
 		rows = append(rows, row)
 	}
 	// Smart mode: while some Mystical trian is still missing, rank by the odds of getting

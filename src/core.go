@@ -57,7 +57,9 @@ type Config struct {
 	UpdateRepo        string    `json:"updateRepo"`    // GitHub owner/repo to check for new versions (empty = default)
 	NoUpdateCheck     bool      `json:"noUpdateCheck"` // never look for updates
 	CfgVer            int       `json:"cfgVer"`        // settings file generation, for one-time upgrades
+	HuntMeasured      bool      `json:"huntMeasured"`  // hunt: blend the advertised odds with the odds measured from your own pulls
 	HourlySummary     bool      `json:"hourlySummary"` // each hour: a notification (and ntfy / Discord) with the last hour's numbers
+	Downtime          []DownWin `json:"downtime"`      // daily hours the opener stays paused
 	KeepAwake         bool      `json:"keepAwake"`     // stop the PC sleeping while opening (the screen may still turn off)
 	Theme             string    `json:"theme"`         // dark, light or blue
 	NtfyOn            bool      `json:"ntfyOn"`        // send alerts to your phone through ntfy
@@ -175,6 +177,7 @@ func NewApp(dir string) *App {
 			HuntMissing:    true,
 			KeepAwake:      true,
 			HourlySummary:  true,
+			HuntMeasured:   true,
 			AutoUpdate:     true,
 			AlertSound:     true,
 			AlertLowPacks:  20,
@@ -693,6 +696,10 @@ func (a *App) lane(gen, lane, lanes int, fails *int64, q chan<- recItem) {
 	}()
 	var lastSend time.Time
 	for a.active(gen) {
+		if a.inDowntime() { // paused hours: stay idle, resume by itself
+			time.Sleep(time.Second)
+			continue
+		}
 		a.mu.Lock()
 		capsule := a.cfg.Capsule
 		delay := delayDur(a.cfg.DelayMs)
@@ -892,6 +899,11 @@ type Snapshot struct {
 	Theme            string
 	KeepAwake        bool
 	HourlySummary    bool
+	Down             bool   // inside a downtime window right now
+	DownEnd          string // when it ends, e.g. "4pm"
+	DownText         string // the windows as text
+	Luck             LuckInfo
+	ETA              ETAInfo
 	NtfyOn           bool
 	NtfyTopic        string
 	NoUpdateCheck    bool
@@ -1048,4 +1060,15 @@ func (s Snapshot) StatusLine() string {
 		state = fmt.Sprintf("Opening \"%s\"", s.Capsule)
 	}
 	return fmt.Sprintf("%s | %s opened", state, fmtInt(s.Opened))
+}
+
+func (a *App) inDowntime() bool {
+	a.mu.Lock()
+	w := a.cfg.Downtime
+	a.mu.Unlock()
+	if len(w) == 0 {
+		return false
+	}
+	d, _ := DownNow(w, time.Now())
+	return d
 }

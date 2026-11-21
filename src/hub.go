@@ -47,15 +47,23 @@ type Hub struct {
 	speedMsg  string
 	speedBusy bool
 
-	sumHour  int64 // the clock hour whose summary is due next
-	upd      *UpdateInfo
-	updBusy  bool
-	updMsg   string
-	updNote  string
-	canAuto  func() bool               // may an update be installed by itself right now?
-	applyUpd func(newExe string) error // swaps the program and restarts (set by main)
-	updTried time.Time
-	bootAt   time.Time
+	sumHour int64 // the clock hour whose summary is due next
+
+	odds      map[string]*capOdds // lifetime pulls per capsule (odds.json)
+	etaKey    string              // what the cached ETA was computed from
+	etaCache  []ETAGroup
+	luckAt    time.Time
+	luckCache LuckInfo
+	oddsMu    sync.Mutex
+	oddsDirty bool
+	upd       *UpdateInfo
+	updBusy   bool
+	updMsg    string
+	updNote   string
+	canAuto   func() bool               // may an update be installed by itself right now?
+	applyUpd  func(newExe string) error // swaps the program and restarts (set by main)
+	updTried  time.Time
+	bootAt    time.Time
 
 	hist      []HistBucket
 	histMu    sync.Mutex
@@ -98,6 +106,7 @@ func NewHub(dir string) *Hub {
 		_ = json.Unmarshal(b, &h.hunt)
 	}
 	h.loadHistory()
+	h.loadOdds()
 	h.bootAt = time.Now()
 	return h
 }
@@ -188,7 +197,11 @@ func (h *Hub) sync() {
 	if len(inv) > 0 && cfg.HuntMissing {
 		_, _, owned = collection(inv)
 	}
-	rows := huntRanking(caps, chances, owned)
+	var measured map[string][2]int
+	if cfg.HuntMeasured {
+		measured = h.measuredMystical()
+	}
+	rows := huntRankingM(caps, chances, owned, measured)
 
 	h.mu.Lock()
 	n := len(h.workers)
@@ -297,6 +310,7 @@ func (h *Hub) Close() {
 	}
 	h.wg.Wait()
 	h.flushHistory()
+	h.flushOdds()
 }
 
 // bg runs f in the background; Close waits for it.
@@ -335,6 +349,7 @@ func (h *Hub) tick() {
 		h.lastHist = time.Now()
 		h.recordCoins(h.pool.get())
 		h.flushHistory()
+		h.flushOdds()
 	}
 	if time.Since(h.lastSamp) >= sampleEvery {
 		h.lastSamp = time.Now()
@@ -487,6 +502,7 @@ func (h *Hub) onPull(a *App, capsule string, r openResp) {
 	}
 	h.mu.Unlock()
 	h.recordHist(r.Rarity)
+	h.recordOdds(capsule, r.Rarity)
 	h.logPull(capsule, r)
 	if r.Rarity == "Chroma" || isMyst {
 		p.mu.Lock()
@@ -578,6 +594,8 @@ func (h *Hub) Snapshot() Snapshot {
 	s.Protected = sealImpl != nil
 	s.KeepAwake = cfg.KeepAwake
 	s.HourlySummary = cfg.HourlySummary
+	s.DownText = FormatDowntime(cfg.Downtime)
+	s.Down, s.DownEnd = DownNow(cfg.Downtime, time.Now())
 	if cfg.WhatsNewVer == appVersion {
 		s.WhatsNew = cfg.WhatsNewNotes
 		if s.WhatsNew == "" {
@@ -638,5 +656,16 @@ func (h *Hub) Snapshot() Snapshot {
 	s.StopAfter, s.MysticalRun = cfg.StopAfterMystical, h.mystRun
 	h.mu.Unlock()
 	s.AlertSound, s.HuntMissing = cfg.AlertSound, cfg.HuntMissing
+	s.Luck, s.ETA = h.luckAndETA(s, cfg.CoinCost)
 	return s
+}
+
+// SetDowntime stores the pause windows typed as text ("3:20pm-4pm, 2am-3am"). Empty clears them.
+func (h *Hub) SetDowntime(text string) string {
+	w, err := ParseDowntime(text)
+	if err != nil {
+		return err.Error()
+	}
+	h.update(func(c *Config) { c.Downtime = w })
+	return ""
 }

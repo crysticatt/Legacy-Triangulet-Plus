@@ -80,6 +80,7 @@ type UIState struct {
 	HistRange          int            // History tab: 0 = 24 h, 1 = 7 days, 2 = 30 days
 	Wall               time.Time      // clock for the History tab (zero = now); previews fix it
 	Scroll             map[string]int // "inv", "auc"
+	DiagAt             float64        // when Copy diagnostics last worked (UIState.Now)
 	Sel                string         // trian picked in the Auction tab
 	Search             string         // lower-case inventory filter
 	AucMsg             string

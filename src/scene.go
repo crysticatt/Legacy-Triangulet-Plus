@@ -6,9 +6,9 @@ import (
 	"strings"
 )
 
-const appVersion = "39"
+const appVersion = "40"
 
-var tabNames = []string{"Trians", "Stats", "Hunt", "Log", "History", "Auction"}
+var tabNames = []string{"Trians", "Stats", "Hunt", "Log", "History", "Auction", "Luck"}
 
 func modeIndex(m string) int {
 	switch m {
@@ -70,6 +70,9 @@ func (p *painter) header() {
 	label, lc := "Idle", colMuted
 	if s.Running {
 		label, lc = "Opening", colGood
+		if s.Down {
+			label, lc = "Paused", colWarn
+		}
 	}
 	p.text(Rect{pill.X + 26, pill.Y, pill.W - 28, pill.H}, label, 12, true, lc, 0)
 	if s.UpdateVer != "" || s.UpdateMsg != "" {
@@ -269,7 +272,7 @@ func (p *painter) tiles() {
 func (p *painter) tabs() {
 	c, s, st := p.c, p.s, p.st
 	bar := Rect{388, 90, 556, 32}
-	tw := 86
+	tw := 79
 	pos := st.num("sg:tab", float64(st.Tab))
 	for i, n := range tabNames {
 		id := "tab:" + itoaInt(i)
@@ -323,6 +326,8 @@ func (p *painter) tabs() {
 		p.viewHistory(content)
 	case st.Tab == 5:
 		p.viewAuction(content)
+	case st.Tab == 6:
+		p.viewLuck(content)
 	}
 	p.fade(content.Inset(1, 1), colCard, from, easeOut(st.enter))
 	_ = s

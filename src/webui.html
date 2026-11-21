@@ -172,6 +172,8 @@ svg{display:block;width:100%}
   <div class="sec"><span class="lab">PHONE ALERTS (ntfy)</span><div class="dim">Install the ntfy app, subscribe to your topic, and rare pulls and warnings arrive on your phone. Anyone who knows the topic name can read it, so keep it random.</div>
     <div class="row"><input type="text" id="ntfyTopic" placeholder="topic name" autocomplete="off"><button class="btn s" id="ntfyRand">Random</button><button class="btn s" id="ntfyTest">Test</button></div>
     <div class="row"><div class="tog" id="tNtfy"><b></b>Send alerts to my phone</div></div></div>
+  <div class="sec"><span class="lab">DOWNTIME (paused hours, every day)</span><div class="dim" id="downNote">Opening stays paused during these hours and resumes by itself. Example: 3:20pm-4pm, 2am-2:30am</div>
+    <input type="text" id="downText" placeholder="3:20pm-4pm" autocomplete="off"></div>
   <div class="sec"><span class="lab">BACKUP</span><div class="dim">One encrypted file with your settings, logins and History. Choose a passphrase (6+ characters) and keep it: it cannot be recovered.</div>
     <input type="password" id="bpass" placeholder="passphrase" autocomplete="off">
     <div class="row"><button class="btn p" id="bExport">Export backup</button><button class="btn" id="bImport">Import backup...</button><input type="file" id="bFile" accept=".tribackup" style="display:none"></div></div>
@@ -185,7 +187,7 @@ svg{display:block;width:100%}
 const $=id=>document.getElementById(id);
 const RC={Uncommon:"#4ade80",Rare:"#3b8cff",Epic:"#a566ff",Legendary:"#ff9f2e",Chroma:"#2ee6d0",Mystical:"#ff4fa3",Unique:"#ffd84a"};
 const RORDER=["Uncommon","Rare","Epic","Legendary","Chroma","Mystical","Unique"];
-const TABS=["Trians","Stats","Hunt","Log","History","Auction"];
+const TABS=["Trians","Stats","Hunt","Log","History","Auction","Luck"];
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fmt=n=>Math.round(Number(n)||0).toLocaleString("en-US");
 let ST=null, tab=+(localStorage.getItem("tab")||0), trView=0, search="", histRange=0, aucSel="", busy=false;
@@ -221,10 +223,11 @@ function render(){
   const sub=$("sub");
   let line=s.Running?('Opening'+(s.Mode==="hunt"?" (hunting)":' "'+(s.Capsule||"")+'"')+" | "+fmt(s.AcctOpened||s.Opened)+" opened"):(s.Info||"Idle");
   sub.className="sub";
+  if(s.Running&&s.Down)line="Paused for downtime, resumes at "+s.DownEnd;
   if(s.Notice){line=s.Notice;sub.className="sub warn"}
   else if(s.Info&&s.Running===false){line=s.Info}
   sub.textContent=line;sub.title=line;
-  $("pill").className="pill"+(s.Running?" on":"");$("pill").lastChild.textContent=s.Running?"Opening":"Idle";
+  $("pill").className="pill"+(s.Running?" on":"");$("pill").lastChild.textContent=s.Running?(s.Down?"Paused":"Opening"):"Idle";
   // account
   const n=(s.AcctNames||[]).length;
   let desc=s.TokenDesc||(s.HasCreds?"token is fetched automatically":"not logged in");
@@ -291,12 +294,12 @@ function drawView(){
   const s=ST.Snap,v=$("view");
   const sig=[tab,trView,histRange,aucSel,search].join("|");
   const full=viewKey!==sig;
-  const data=JSON.stringify([tab,tab===0?[s.Inv&&s.Inv.length,s.Missing&&s.Missing.length,s.Collected]:tab===1?[s.Counts,s.Series&&s.Series.length,s.Opened]:tab===2?[s.Hunt,s.StopAfter,s.HuntMissing,s.PacksLeft,s.SinceMystical,s.MysticalRun,s.PacksPerMystical]:tab===3?[s.Log&&s.Log.length&&s.Log[0].Time,s.AlertSound]:tab===4?[s.Hist&&s.Hist.length,s.Hist&&s.Hist.length&&s.Hist[s.Hist.length-1]]:[s.AuctionMsg,s.AuctionBusy,s.Inv&&s.Inv.length]]);
+  const data=JSON.stringify([tab,tab===0?[s.Inv&&s.Inv.length,s.Missing&&s.Missing.length,s.Collected]:tab===1?[s.Counts,s.Series&&s.Series.length,s.Opened]:tab===2?[s.Hunt,s.StopAfter,s.HuntMissing,s.PacksLeft,s.SinceMystical,s.MysticalRun,s.PacksPerMystical]:tab===3?[s.Log&&s.Log.length&&s.Log[0].Time,s.AlertSound]:tab===4?[s.Hist&&s.Hist.length,s.Hist&&s.Hist.length&&s.Hist[s.Hist.length-1]]:[s.AuctionMsg,s.AuctionBusy,s.Inv&&s.Inv.length]:[s.ETA,s.Luck]]);
   if(!full&&v.dataset.d===data)return;
   const keepScroll=full?0:(v.querySelector(".grid2")||{}).scrollTop||0;
   v.dataset.d=data;
   if(full){viewKey=sig;v.classList.remove("view");void v.offsetWidth;v.classList.add("view")}
-  [vTrians,vStats,vHunt,vLog,vHistory,vAuction][tab](v,s);
+  [vTrians,vStats,vHunt,vLog,vHistory,vAuction,vLuck][tab](v,s);
   const g=v.querySelector(".grid2");if(g&&keepScroll)g.scrollTop=keepScroll;
 }
 
@@ -409,6 +412,16 @@ function vAuction(v,s){
   const b=$("alist");if(b)b.onclick=()=>act("auction",{s:aucSel,amount:+$("aam").value||0,bid:+$("abid").value||0,pay:+$("apay").value||0});
 }
 
+function etaTxt(p,rate){if(p<=0)return"done";let t=fmt(Math.round(p))+" packs";if(rate>0){const m=Math.round(p/rate/60);t+=" (~"+(m<60?m+"m":Math.floor(m/60)+"h "+m%60+"m")+")"}return t}
+function vLuck(v,s){
+  const e=s.ETA||{},l=s.Luck||{};
+  v.innerHTML='<div class="row"><span class="lab" style="flex:1">FIRST COLLECTION ETA</span><button class="btn s" id="diag">Copy diagnostics</button></div>'
+   +((e.Groups&&e.Groups.length)?e.Groups.map(g=>'<div style="display:flex;gap:12px;padding:3px 0"><b style="width:140px">'+esc(g.Name)+'</b><span class="muted">'+g.Missing+' missing: '+etaTxt(g.Packs,e.Rate)+'</span></div>').join(""):'<div class="dim">Log in and load your trians to see how long the rest will take.</div>')
+   +'<div class="lab" style="margin-top:16px">LUCK (vs the site\'s odds)</div>'
+   +((l.Pulls>0)?'<div class="dim">'+fmt(l.Pulls)+' capsules counted</div>'+(l.Rows||[]).map(r=>'<div style="display:flex;gap:12px;padding:3px 0"><b style="width:90px">'+esc(r.Rarity)+'</b><span class="muted">got '+r.Actual+', expected '+r.Expected.toFixed(1)+': luckier than '+Math.round(r.Pct)+'% of players</span></div>').join(""):'<div class="dim">Open some packs and your luck shows up here.</div>');
+  $("diag").onclick=async()=>{const j=await actMsg("diag");try{await navigator.clipboard.writeText(j.msg||"");toast("Diagnostics copied")}catch(e){prompt("Copy this:",j.msg||"")}};
+}
+
 // ---------- controls ----------
 $("start").onclick=()=>act(ST&&ST.Snap.Running?"stop":"start");
 $("login").onclick=()=>{act("login",{s:$("user").value,p:$("pass").value});$("pass").value=""};
@@ -432,7 +445,8 @@ function setMsg(m){$("setMsg").textContent=m||""}
 async function actMsg(a,extra){
   try{const r=await fetch("/api/do",{method:"POST",headers:{"Content-Type":"application/json","X-Opener":"1"},body:JSON.stringify(Object.assign({a},extra||{}))});
     const j=await r.json();setMsg(j.error||j.msg||"");poll();return j}catch(e){setMsg("Lost connection to the opener.")}}
-$("settingsBtn").onclick=()=>{$("modal").classList.add("show");if(ST){$("ntfyTopic").value=ST.Snap.NtfyTopic||""}};
+$("settingsBtn").onclick=()=>{$("modal").classList.add("show");if(ST){$("ntfyTopic").value=ST.Snap.NtfyTopic||"";$("downText").value=ST.Snap.DownText||""}};
+$("downText").onchange=async()=>{await actMsg("downtime",{s:$("downText").value});await poll();$("downText").value=ST.Snap.DownText||""};
 $("setClose").onclick=()=>{$("modal").classList.remove("show");setMsg("")};
 $("modal").onclick=e=>{if(e.target===$("modal"))$("setClose").onclick()};
 document.querySelectorAll("#themeSeg button").forEach(b=>b.onclick=()=>{applyTheme(b.dataset.v);act("theme",{s:b.dataset.v})});

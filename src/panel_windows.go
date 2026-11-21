@@ -114,6 +114,7 @@ const (
 
 	ctlNtfy  = 212
 	ctlBPass = 213
+	ctlDown  = 214
 
 	panelStyle = wsCaption | wsSysMenu | wsMinimizeBox | wsMaximizeBox | wsThickFrame | wsClipChildren
 )
@@ -180,7 +181,7 @@ func setThemeNow(name string) {
 	}
 }
 
-var editIDs = map[string]uintptr{"ntfy": ctlNtfy, "bpass": ctlBPass, "user": ctlUser, "pass": ctlPass, "delay": ctlDelay, "search": ctlSearch, "aamount": ctlAAmount, "abid": ctlABid, "apay": ctlAPay}
+var editIDs = map[string]uintptr{"ntfy": ctlNtfy, "bpass": ctlBPass, "down": ctlDown, "user": ctlUser, "pass": ctlPass, "delay": ctlDelay, "search": ctlSearch, "aamount": ctlAAmount, "abid": ctlABid, "apay": ctlAPay}
 
 var (
 	panelClass = utf16Ptr("TrianguletOpenerPanel")
@@ -319,6 +320,7 @@ func createPanel() {
 	setText(edits["pass"], cfg.Password)
 	setText(edits["delay"], trimFloat(cfg.DelayMs))
 	setText(edits["ntfy"], cfg.NtfyTopic)
+	setText(edits["down"], FormatDowntime(cfg.Downtime))
 	setText(edits["aamount"], "1")
 	setText(edits["abid"], "100")
 	setText(edits["apay"], "0")
@@ -812,6 +814,10 @@ func handleClick(id string) {
 				dirty = true
 			}()
 		}
+	case id == "diag":
+		if setClipboardText(Diagnostics(hub.Snapshot())) {
+			ui.DiagAt = ui.Now
+		}
 	case strings.HasPrefix(id, "pick:"):
 		ui.Sel = strings.TrimPrefix(id, "pick:")
 	}
@@ -932,6 +938,14 @@ func panelWndProc(hwnd, msg, wparam, lparam uintptr) uintptr {
 				}
 				if id == ctlNtfy {
 					applyNtfyTopic()
+				}
+				if id == ctlDown {
+					if m := hub.SetDowntime(getText(edits["down"])); m != "" {
+						ui.SetMsg = m
+					} else {
+						ui.SetMsg = "Downtime saved."
+						setText(edits["down"], FormatDowntime(hub.cfg().Downtime))
+					}
 				}
 				ui.moving = true
 				render()

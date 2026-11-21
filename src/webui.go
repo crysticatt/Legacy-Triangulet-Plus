@@ -283,6 +283,13 @@ func (w *webServer) doAction(rw http.ResponseWriter, r *http.Request) {
 			reply(errors.New(m))
 			return
 		}
+	case "diag":
+		note = Diagnostics(h.Snapshot())
+	case "downtime":
+		if m := h.SetDowntime(q.S); m != "" {
+			reply(errors.New(m))
+			return
+		}
 	case "ntfyrand":
 		h.RandomNtfyTopic()
 	case "ntfytest":

@@ -341,6 +341,9 @@ func (p *painter) viewHunt(r Rect) {
 		if h.Chasing {
 			odds = fmt.Sprintf("%s%% new", trimFloat(h.NewOdds))
 		}
+		if h.Known && h.Measured > 0 && h.Pulls >= 200 {
+			odds += "*" // blended with the odds measured from your own pulls
+		}
 		if !h.Known {
 			odds = fmt.Sprintf("%d Mystical", h.Mystics)
 		}
@@ -390,6 +393,7 @@ func (p *painter) viewAuction(r Rect) {
 		p.f.MaxScroll["auc"] = maxScroll
 		off := mini(maxi(st.Scroll["auc"], 0), maxScroll)
 		inner := list.Inset(4, 4)
+		p.f.hit(list, "scroll:auc") // first, so the rows registered after it stay on top
 		p.c.SetClip(inner)
 		for i, it := range s.Inv {
 			row := Rect{inner.X, inner.Y + i*rowH - off, inner.W, rowH - 2}
@@ -413,7 +417,6 @@ func (p *painter) viewAuction(r Rect) {
 			}
 		}
 		p.c.ResetClip()
-		p.f.hit(list, "scroll:auc")
 		p.scrollbar(inner, total, off)
 	}
 
@@ -607,4 +610,58 @@ func (p *painter) viewHistory(r Rect) {
 	p.text(Rect{c2.X + c2.W - 290, c2.Y + 6, 280, 16}, fmt.Sprintf("now %s  ·  high %s  ·  low %s", fmtInt(last), fmtInt(int(maxC)), fmtInt(int(minC))), 11, false, colMuted, 2)
 	p.text(Rect{cp.X, c2.Y + c2.H - 18, 80, 14}, pts[0].Label, 10, false, colDim, 0)
 	p.text(Rect{cp.X + cp.W - 80, c2.Y + c2.H - 18, 80, 14}, pts[len(pts)-1].Label, 10, false, colDim, 2)
+}
+
+// ---------- Luck ----------
+
+func etaText(packs, rate float64) string {
+	if packs <= 0 {
+		return "done"
+	}
+	t := fmtInt(int(packs+0.5)) + " packs"
+	if rate > 0 {
+		t += " (~" + fmtDur(int(packs/rate)) + ")"
+	}
+	return t
+}
+
+func (p *painter) viewLuck(r Rect) {
+	s := p.s
+	p.label(r.X+12, r.Y+10, "FIRST COLLECTION ETA")
+	p.button("diag", Rect{r.X + r.W - 12 - 130, r.Y + 6, 130, 26}, diagCaption(p.st), colCard, 1, 12)
+	y := r.Y + 32
+	if len(s.ETA.Groups) == 0 {
+		p.text(Rect{r.X + 12, y, r.W - 24, 16}, "Log in and load your trians to see how long the rest will take.", 12, false, colDim, 0)
+		y += 20
+	}
+	for _, g := range s.ETA.Groups {
+		if y > r.Y+r.H-150 {
+			break
+		}
+		p.text(Rect{r.X + 12, y, 150, 18}, g.Name, 12, true, colText, 0)
+		txt := fmt.Sprintf("%d missing: %s", g.Missing, etaText(g.Packs, s.ETA.Rate))
+		p.text(Rect{r.X + 150, y, r.W - 162, 18}, txt, 12, false, colMuted, 0)
+		y += 20
+	}
+	y = r.Y + r.H - 140
+	p.label(r.X+12, y, "LUCK (vs the site's odds)")
+	y += 22
+	if s.Luck.Pulls == 0 {
+		p.text(Rect{r.X + 12, y, r.W - 24, 16}, "Open some packs and your luck shows up here.", 12, false, colDim, 0)
+		return
+	}
+	p.text(Rect{r.X + 12, y, r.W - 24, 16}, fmt.Sprintf("%s capsules counted", fmtInt(s.Luck.Pulls)), 11, false, colDim, 0)
+	y += 18
+	for _, l := range s.Luck.Rows {
+		p.text(Rect{r.X + 12, y, 90, 18}, l.Rarity, 12, true, colText, 0)
+		p.text(Rect{r.X + 104, y, r.W - 116, 18}, fmt.Sprintf("got %d, expected %.1f: luckier than %.0f%% of players", l.Actual, l.Expected, l.Pct), 12, false, colMuted, 0)
+		y += 20
+	}
+}
+
+func diagCaption(st *UIState) string {
+	if st.DiagAt > 0 && st.Now-st.DiagAt < 2.5 {
+		return "Copied!"
+	}
+	return "Copy diagnostics"
 }

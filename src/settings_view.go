@@ -53,16 +53,27 @@ func (p *painter) viewSettings(r Rect) {
 	p.toggle("ntfyon", Rect{tf.X + 340, r.Y + 238, w - 340, 28}, "Send to phone", s.NtfyOn)
 
 	// backup
-	row(280, "BACKUP")
-	soft(298, "Saves your settings, logins and History in one encrypted file (Desktop). Import reads the newest one.", colMuted)
-	bf := Rect{x, r.Y + 318, 200, 28}
+	row(268, "BACKUP")
+	soft(286, "Saves your settings, logins and History in one encrypted file (Desktop). Import reads the newest one.", colMuted)
+	bf := Rect{x, r.Y + 306, 200, 28}
 	p.field(bf, "bpass")
 	p.f.Edits["bpass"] = Rect{bf.X + 9, bf.Y + 6, bf.W - 18, 16}
-	p.button("bexport", Rect{bf.X + 208, r.Y + 318, 64, 28}, "Export", colAccent, 0, 12)
-	p.button("bimport", Rect{bf.X + 280, r.Y + 318, 64, 28}, "Import", colCard, 1, 12)
-	p.text(Rect{bf.X + 352, r.Y + 318, w - 352, 28}, "passphrase (6+ characters)", 10, false, colDim, 0)
+	p.button("bexport", Rect{bf.X + 208, r.Y + 306, 64, 28}, "Export", colAccent, 0, 12)
+	p.button("bimport", Rect{bf.X + 280, r.Y + 306, 64, 28}, "Import", colCard, 1, 12)
+	p.text(Rect{bf.X + 352, r.Y + 306, w - 352, 28}, "passphrase (6+ characters)", 10, false, colDim, 0)
+
+	// downtime
+	row(338, "DOWNTIME (paused hours, every day)")
+	df := Rect{x, r.Y + 356, 300, 26}
+	p.field(df, "down")
+	p.f.Edits["down"] = Rect{df.X + 9, df.Y + 5, df.W - 18, 16}
+	dn := "e.g. 3:20pm-4pm, 2am-2:30am"
+	if s.Down {
+		dn = "Paused now, resumes at " + s.DownEnd
+	}
+	p.text(Rect{df.X + 308, r.Y + 356, w - 308, 26}, dn, 10, false, colDim, 0)
 
 	if m := strings.TrimSpace(st.SetMsg); m != "" {
-		p.text(Rect{x, r.Y + 358, w, 32}, m, 11, false, colText, 0)
+		p.text(Rect{x, r.Y + 382, w, 16}, m, 11, false, colText, 0)
 	}
 }
