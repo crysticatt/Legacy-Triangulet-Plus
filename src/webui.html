@@ -164,6 +164,7 @@ svg{display:block;width:100%}
 <div class="modal" id="modal"><div class="sheet">
   <div class="row top" style="margin:0"><h2>Settings</h2><button class="btn s" id="setClose">Close</button></div>
   <div class="sec"><span class="lab">THEME</span><div class="seg" id="themeSeg"><button data-v="dark">Dark</button><button data-v="light">Light</button><button data-v="blue">Blue</button></div></div>
+  <div class="sec"><span class="lab">POWER</span><div class="row"><div class="tog" id="tAwake"><b></b>Keep my Mac awake while opening (the screen can still turn off)</div></div></div>
   <div class="sec"><div class="row"><span class="lab" style="flex:1">UPDATES</span><button class="btn s" id="chkUpd">Check for updates</button></div>
     <div class="dim" id="updNote"></div>
     <div class="row"><div class="tog" id="tUpdCheck"><b></b>Look for updates</div><div class="tog" id="tAutoUpd"><b></b>Install by itself</div></div></div>
@@ -257,7 +258,7 @@ function render(){
    $("updbtn").textContent=s.UpdateBusy?"Updating...":(s.UpdateMsg?"Retry":"Update");$("updbtn").disabled=!!s.UpdateBusy;$("updbtn").style.display=s.UpdateVer?"":"none";}
   applyTheme(s.Theme);
   document.querySelectorAll("#themeSeg button").forEach(b=>b.className=b.dataset.v===s.Theme?"on":"");
-  $("tUpdCheck").className="tog"+(s.NoUpdateCheck?"":" on");$("tAutoUpd").className="tog"+(s.AutoUpdate?" on":"");$("tNtfy").className="tog"+(s.NtfyOn?" on":"");
+  $("tUpdCheck").className="tog"+(s.NoUpdateCheck?"":" on");$("tAutoUpd").className="tog"+(s.AutoUpdate?" on":"");$("tNtfy").className="tog"+(s.NtfyOn?" on":"");$("tAwake").className="tog"+(s.KeepAwake?" on":"");
   $("updNote").textContent=s.UpdateVer?("Version "+s.UpdateVer+" is available (see the Update button on the left)"):(s.UpdateNote||("You are on version "+o.Version));
   $("protNote").textContent=s.Protected?"Saved passwords are kept in your Mac's Keychain, not in config.json.":"Saved passwords are kept as plain text in config.json on this system. Keep that file private.";
   $("protNote").style.color=s.Protected?"var(--good)":"var(--warn)";
@@ -440,6 +441,7 @@ $("tUpdCheck").onclick=()=>actMsg("updcheck",{on:!!ST.Snap.NoUpdateCheck});
 $("tAutoUpd").onclick=()=>actMsg("autoupdate",{on:!ST.Snap.AutoUpdate});
 $("ntfyRand").onclick=async()=>{await actMsg("ntfyrand");await poll();$("ntfyTopic").value=ST.Snap.NtfyTopic||"";setMsg("New private topic made. Subscribe to it in the ntfy app, then press Test.")};
 $("ntfyTest").onclick=async()=>{await actMsg("ntfy",{on:!!ST.Snap.NtfyOn,s:$("ntfyTopic").value});await actMsg("ntfytest")};
+$("tAwake").onclick=()=>actMsg("awake",{on:!ST.Snap.KeepAwake});
 $("tNtfy").onclick=()=>actMsg("ntfy",{on:!ST.Snap.NtfyOn,s:$("ntfyTopic").value});
 $("ntfyTopic").onchange=()=>actMsg("ntfy",{on:!!ST.Snap.NtfyOn,s:$("ntfyTopic").value});
 $("bExport").onclick=async()=>{

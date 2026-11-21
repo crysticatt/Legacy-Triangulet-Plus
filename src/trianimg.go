@@ -3,6 +3,7 @@ package main
 import (
 	"image"
 	"sync"
+	"time"
 )
 
 // Pictures for the trians list are fetched on demand, one at a time in the background,
@@ -12,8 +13,8 @@ var (
 	imgMu      sync.Mutex
 	imgCache   = map[string]*image.RGBA{}
 	imgPending = map[string]bool{}
-	imgMisses  = map[string]bool{}
-	imgSlots   = make(chan struct{}, 3)
+	imgMisses  = map[string]time.Time{} // when the last try failed; tried again after a while
+	imgSlots   = make(chan struct{}, 6)
 	imgHub     *Hub
 )
 
@@ -24,7 +25,7 @@ func trianImage(name string) *image.RGBA {
 	if im, ok := imgCache[name]; ok {
 		return im
 	}
-	if imgMisses[name] || imgPending[name] || imgHub == nil {
+	if t, bad := imgMisses[name]; (bad && time.Since(t) < 45*time.Second) || imgPending[name] || imgHub == nil {
 		return nil
 	}
 	imgPending[name] = true
@@ -62,7 +63,7 @@ func fetchTrianImage(name string) {
 	if found != nil {
 		imgCache[name] = found
 	} else {
-		imgMisses[name] = true
+		imgMisses[name] = time.Now()
 	}
 	imgMu.Unlock()
 	if found != nil {

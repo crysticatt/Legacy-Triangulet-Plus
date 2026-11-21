@@ -16,6 +16,8 @@ func (p *painter) viewSettings(r Rect) {
 	row(40, "THEME")
 	p.seg("theme", Rect{x + 70, r.Y + 34, 270, 28}, []string{"Dark", "Light", "Blue"}, themeIndex(s.Theme))
 
+	p.toggle("awake", Rect{x + 352, r.Y + 34, w - 352, 28}, "Keep PC awake", s.KeepAwake)
+
 	// updates
 	row(76, "UPDATES")
 	note := s.UpdateNote

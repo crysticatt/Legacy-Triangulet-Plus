@@ -574,6 +574,7 @@ func (h *Hub) Snapshot() Snapshot {
 	s.AutoUpdate = cfg.AutoUpdate
 	s.Theme, s.NtfyOn, s.NtfyTopic, s.NoUpdateCheck = normTheme(cfg.Theme), cfg.NtfyOn, cfg.NtfyTopic, cfg.NoUpdateCheck
 	s.Protected = sealImpl != nil
+	s.KeepAwake = cfg.KeepAwake
 	if cfg.WhatsNewVer == appVersion {
 		s.WhatsNew = cfg.WhatsNewNotes
 		if s.WhatsNew == "" {

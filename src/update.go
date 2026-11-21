@@ -349,7 +349,11 @@ func (h *Hub) InstallUpdate(apply func(newExe string) error) {
 	h.updMsg = "Downloading..."
 	h.mu.Unlock()
 	h.bg(func() {
+		h.primary.logf("update: installing version %s", info.Version)
 		set := func(msg string) {
+			if msg != "" {
+				h.primary.logf("update: %s", msg)
+			}
 			h.mu.Lock()
 			h.updMsg, h.updBusy = msg, false
 			h.mu.Unlock()

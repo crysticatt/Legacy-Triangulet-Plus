@@ -687,6 +687,9 @@ func handleClick(id string) {
 		setStartup(!startupEnabled())
 		ui.StartupOn = startupEnabled()
 	case id == "boot":
+		if !bootEnabledCached() && !messageBox2("Triangulet Opener", "This makes a Windows startup task that runs the opener with no window before you sign in.\n\nBecause the app is not code-signed, Windows Defender or other antivirus may flag it. That is a false alarm, but if it happens: restore the file in Windows Security > Protection history, then send it to Microsoft as \"I believe this file is clean\".\n\nTurn it on?", mbOKCancel|mbIconInformation) {
+			break
+		}
 		setBoot(!bootEnabledCached())
 	case id == "auction":
 		doAuction()
@@ -754,6 +757,8 @@ func handleClick(id string) {
 		ui.SetMsg = ""
 	case strings.HasPrefix(id, "theme:"):
 		setThemeNow(themeNames[atoiOr(id[6:], 0)%len(themeNames)])
+	case id == "awake":
+		hub.update(func(c *Config) { c.KeepAwake = !c.KeepAwake })
 	case id == "chkupd":
 		hub.CheckUpdateNow(true)
 	case id == "updcheck":

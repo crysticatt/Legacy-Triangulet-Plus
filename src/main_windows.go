@@ -480,6 +480,7 @@ func main() {
 	// Discord presence runs on its own, so it keeps working with the window hidden
 	stopDiscord := make(chan struct{})
 	go RunDiscord(hub, dialDiscord, 15*time.Second, stopDiscord)
+	go KeepAwakeLoop(hub, 20*time.Second, make(chan struct{}))
 
 	// start opening on launch if there is a saved login
 	go func() {
@@ -539,5 +540,6 @@ func runHeadless() {
 	hub = NewHub(dataDir())
 	imgHub = hub
 	pTimeBeginPeriod.Call(1)
+	go KeepAwakeLoop(hub, 20*time.Second, make(chan struct{}))
 	RunHeadless(hub, 2*time.Second, make(chan struct{}))
 }

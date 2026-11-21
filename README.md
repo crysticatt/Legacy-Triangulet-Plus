@@ -68,6 +68,7 @@ show your friends what you're doing: **"opening capsules"** appears as your disc
 - **alerts**: sound and tray notice for rare pulls, goal reached, low packs, out of coins, or a wrong login.
 
 ### settings (button at the bottom left)
+- **keep pc awake**: while opening, your pc does not sleep but the screen can turn off, so you can leave it running with the monitor off.
 - **theme**: dark, light or blue.
 - **updates**: check now, turn the check off, or install updates by themselves while the window is hidden. after an update, a "what's new" box shows the release notes once.
 - **password protection**: your saved password is encrypted for this pc (windows) or kept in the keychain (mac), not stored as plain text.
@@ -113,3 +114,7 @@ the app uses only the go standard library. the window is drawn by a small built-
 ## license
 
 [mit](license).
+
+## antivirus warning
+
+the app is not code-signed, and the **before sign-in** option creates a hidden startup task. some antivirus programs (including windows defender) flag that as a trojan. it is a false alarm, but you can avoid it by using **run at startup** instead. if defender removes the file, restore it in windows security > protection history and send it to microsoft (security intelligence > submit a file > "i believe this file is clean").

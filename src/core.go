@@ -56,6 +56,8 @@ type Config struct {
 	Accounts          []Account `json:"accounts"`      // saved logins to switch between
 	UpdateRepo        string    `json:"updateRepo"`    // GitHub owner/repo to check for new versions (empty = default)
 	NoUpdateCheck     bool      `json:"noUpdateCheck"` // never look for updates
+	CfgVer            int       `json:"cfgVer"`        // settings file generation, for one-time upgrades
+	KeepAwake         bool      `json:"keepAwake"`     // stop the PC sleeping while opening (the screen may still turn off)
 	Theme             string    `json:"theme"`         // dark, light or blue
 	NtfyOn            bool      `json:"ntfyOn"`        // send alerts to your phone through ntfy
 	NtfyTopic         string    `json:"ntfyTopic"`     // your private ntfy topic name
@@ -170,6 +172,8 @@ func NewApp(dir string) *App {
 			DiscordID:      defaultDiscordID,
 			CoinCost:       25,
 			HuntMissing:    true,
+			KeepAwake:      true,
+			AutoUpdate:     true,
 			AlertSound:     true,
 			AlertLowPacks:  20,
 		},
@@ -179,6 +183,10 @@ func NewApp(dir string) *App {
 	path := filepath.Join(dir, "config.json")
 	if b, err := os.ReadFile(path); err == nil {
 		_ = json.Unmarshal(b, &a.cfg) // missing keys keep defaults
+		if a.cfg.CfgVer < 38 {        // v38: installing updates by itself is now on by default
+			a.cfg.AutoUpdate, a.cfg.CfgVer = true, 38
+			defer a.saveConfigLocked()
+		}
 		if openConfig(&a.cfg) {
 			a.logf("some saved logins could not be unlocked (config.json came from another PC or user?). Log in again.")
 		}
@@ -848,6 +856,7 @@ type Snapshot struct {
 	UpdateNote       string // result of a manual "check for updates"
 	AutoUpdate       bool
 	Theme            string
+	KeepAwake        bool
 	NtfyOn           bool
 	NtfyTopic        string
 	NoUpdateCheck    bool

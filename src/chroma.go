@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // The tray icon shows the rarest Chroma you have pulled. "Rarest" means the lowest
@@ -156,8 +157,15 @@ func trianImageURLs(base, capsule, name, hint string) []string {
 	return uniqStrings(out)
 }
 
+// imgClient has its own connections: pictures must not wait in line behind thousands of capsule
+// requests on the shared pool (that is what made the list look empty while opening fast).
+var imgClient = &http.Client{Timeout: 15 * time.Second, Transport: &http.Transport{
+	Proxy: http.ProxyFromEnvironment, MaxIdleConnsPerHost: 4, MaxConnsPerHost: 6, IdleConnTimeout: 30 * time.Second,
+	TLSHandshakeTimeout: 10 * time.Second, ForceAttemptHTTP2: true,
+}}
+
 func (a *App) tryImage(u string) ([]byte, image.Image, bool) {
-	resp, err := a.client.Get(u)
+	resp, err := imgClient.Get(u)
 	if err != nil {
 		return nil, nil, false
 	}

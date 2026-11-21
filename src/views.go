@@ -92,6 +92,10 @@ func (p *painter) viewTrians(r Rect) {
 		rx, ry := i%2, i/2
 		cell := Rect{area.X + rx*(cw+8), area.Y + ry*(ch+4) - off, cw, ch}
 		if cell.Y+cell.H < area.Y || cell.Y > area.Y+area.H {
+			// start loading pictures a few screens ahead so they are ready when you scroll
+			if it.Qty > 0 && st.ImgFor != nil && cell.Y > area.Y-area.H && cell.Y < area.Y+2*area.H {
+				st.ImgFor(it.Name)
+			}
 			continue
 		}
 		id := "inv:" + it.Name

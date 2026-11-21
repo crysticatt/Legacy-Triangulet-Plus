@@ -272,6 +272,8 @@ func (w *webServer) doAction(rw http.ResponseWriter, r *http.Request) {
 		h.SetAutoUpdate(q.On)
 	case "updcheck":
 		h.update(func(c *Config) { c.NoUpdateCheck = !q.On })
+	case "awake":
+		h.update(func(c *Config) { c.KeepAwake = q.On })
 	case "theme":
 		h.SetTheme(q.S)
 	case "ntfy":

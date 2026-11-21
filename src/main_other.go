@@ -197,6 +197,7 @@ func main() {
 	alertHook = playSound
 	stopDiscord := make(chan struct{})
 	go RunDiscord(hub, dialDiscord, 15*time.Second, stopDiscord)
+	go KeepAwakeLoop(hub, 20*time.Second, stopDiscord)
 	go func() { // desktop notifications for alerts
 		for range time.Tick(time.Second) {
 			if t, x, ok := hub.primary.takeBalloon(); ok {
