@@ -69,6 +69,7 @@ show your friends what you're doing: **"opening capsules"** appears as your disc
 
 ### settings (button at the bottom left)
 - **hourly summary**: each hour, a notification with packs opened, mystical, chroma and your coin change (also to ntfy / discord webhook).
+- **least and wish modes**: go for the trian you own the fewest of (random if tied), or only among the trians you starred in the **wishlist** tab.
 - **luck tab**: how long your first full collection will take, how lucky you have been compared with the site's odds, and a **copy diagnostics** button for bug reports.
 - **downtime hours**: type the hours the opener should stay paused (for example `3:20pm-4pm`); it resumes by itself.
 - **keep pc awake**: while opening, your pc does not sleep but the screen can turn off, so you can leave it running with the monitor off.
