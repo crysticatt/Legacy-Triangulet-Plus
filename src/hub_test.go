@@ -642,3 +642,11 @@ func TestRequestsKeepFlowingWithoutPauses(t *testing.T) {
 		t.Fatalf("pipe was less than half full in %d of %d samples", low, samples)
 	}
 }
+
+func TestWorkersHaveOwnConnections(t *testing.T) {
+	h := NewHub(t.TempDir())
+	a, b := h.newExtra(), h.newExtra()
+	if a.client.Transport == h.primary.client.Transport || a.client.Transport == b.client.Transport {
+		t.Fatal("workers share one connection pool")
+	}
+}

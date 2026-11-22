@@ -61,24 +61,30 @@ var (
 	transport     *http.Transport
 )
 
+// newTransport makes a connection pool of its own. Every worker uses one, so each worker
+// opens its own connection(s) to the site instead of all of them sharing a single
+// (HTTP/2) connection, which can become the bottleneck.
+func newTransport() *http.Transport {
+	return &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   10 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		ForceAttemptHTTP2:   true,
+		MaxIdleConns:        256,
+		MaxIdleConnsPerHost: 128,
+		IdleConnTimeout:     90 * time.Second,
+		TLSHandshakeTimeout: 10 * time.Second,
+		DisableCompression:  true, // replies are tiny; skipping gzip saves work
+		WriteBufferSize:     16 << 10,
+		ReadBufferSize:      16 << 10,
+	}
+}
+
+// sharedTransport is one pool for everything that is not a worker.
 func sharedTransport() *http.Transport {
-	transportOnce.Do(func() {
-		transport = &http.Transport{
-			Proxy: http.ProxyFromEnvironment,
-			DialContext: (&net.Dialer{
-				Timeout:   10 * time.Second,
-				KeepAlive: 30 * time.Second,
-			}).DialContext,
-			ForceAttemptHTTP2:   true,
-			MaxIdleConns:        256,
-			MaxIdleConnsPerHost: 128,
-			IdleConnTimeout:     90 * time.Second,
-			TLSHandshakeTimeout: 10 * time.Second,
-			DisableCompression:  true, // replies are tiny; skipping gzip saves work
-			WriteBufferSize:     16 << 10,
-			ReadBufferSize:      16 << 10,
-		}
-	})
+	transportOnce.Do(func() { transport = newTransport() })
 	return transport
 }
 

@@ -59,6 +59,7 @@ type Config struct {
 	CfgVer            int       `json:"cfgVer"`        // settings file generation, for one-time upgrades
 	HuntMeasured      bool      `json:"huntMeasured"`  // hunt: blend the advertised odds with the odds measured from your own pulls
 	HourlySummary     bool      `json:"hourlySummary"` // each hour: a notification (and ntfy / Discord) with the last hour's numbers
+	Wishlist          []string  `json:"wishlist"`      // trians you want (Wishlist tab)
 	Downtime          []DownWin `json:"downtime"`      // daily hours the opener stays paused
 	KeepAwake         bool      `json:"keepAwake"`     // stop the PC sleeping while opening (the screen may still turn off)
 	Theme             string    `json:"theme"`         // dark, light or blue
@@ -183,7 +184,7 @@ func NewApp(dir string) *App {
 			AlertLowPacks:  20,
 		},
 	}
-	a.client = &http.Client{Transport: sharedTransport(), Timeout: 20 * time.Second}
+	a.client = &http.Client{Transport: newTransport(), Timeout: 20 * time.Second} // one connection pool per worker
 
 	path := filepath.Join(dir, "config.json")
 	if b, err := os.ReadFile(path); err == nil {
@@ -899,6 +900,8 @@ type Snapshot struct {
 	Theme            string
 	KeepAwake        bool
 	HourlySummary    bool
+	Wishlist         []string
+	Target           string // trian the Least / Wish mode is going for right now
 	Down             bool   // inside a downtime window right now
 	DownEnd          string // when it ends, e.g. "4pm"
 	DownText         string // the windows as text

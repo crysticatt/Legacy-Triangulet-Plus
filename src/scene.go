@@ -6,9 +6,9 @@ import (
 	"strings"
 )
 
-const appVersion = "40"
+const appVersion = "42"
 
-var tabNames = []string{"Trians", "Stats", "Hunt", "Log", "History", "Auction", "Luck"}
+var tabNames = []string{"Trians", "Stats", "Hunt", "Log", "History", "Auction", "Luck", "Wishlist"}
 
 func modeIndex(m string) int {
 	switch m {
@@ -16,6 +16,10 @@ func modeIndex(m string) int {
 		return 0
 	case "hunt":
 		return 2
+	case "least":
+		return 3
+	case "wish":
+		return 4
 	}
 	return 1
 }
@@ -145,9 +149,26 @@ func (p *painter) modeCard() {
 	p.label(r.X+12, r.Y+8, "MODE")
 	rf := Rect{r.X + r.W - 12 - 60, r.Y + 5, 60, 20}
 	p.button("refresh", rf, "refresh", colCard, 1, 11)
-	p.seg("mode", Rect{r.X + 12, r.Y + 28, 316, 30}, []string{"Fixed", "Next on Mystical", "Hunt"}, modeIndex(s.Mode))
+	p.seg("mode", Rect{r.X + 12, r.Y + 28, 316, 30}, []string{"Fixed", "Next", "Hunt", "Least", "Wish"}, modeIndex(s.Mode))
 
 	area := Rect{r.X + 12, r.Y + 68, 316, 96}
+	if s.Mode == "least" || s.Mode == "wish" {
+		what := "Go for the trian you own the fewest of (random if tied)"
+		if s.Mode == "wish" {
+			what = "Go for the wishlist trian you own the fewest of"
+		}
+		p.text(Rect{area.X, area.Y, area.W, 16}, what, 12, false, colMuted, 0)
+		p.text(Rect{area.X, area.Y + 26, area.W, 16}, "Now going for", 11, true, colAccent, 0)
+		now := s.Target
+		switch {
+		case now == "" && s.Mode == "wish" && len(s.Wishlist) == 0:
+			now = "Star some trians in the Wishlist tab"
+		case now == "":
+			now = "Log in to load your trians"
+		}
+		p.text(Rect{area.X, area.Y + 42, area.W, 18}, now, 14, true, colText, 0)
+		return
+	}
 	if s.Mode == "hunt" {
 		p.text(Rect{area.X, area.Y, area.W, 16}, "Aim the workers at the best Mystical odds", 12, false, colMuted, 0)
 		p.seg("spread", Rect{area.X, area.Y + 22, area.W, 28}, []string{"Focus", "Split 2", "Split 3", "Split 4"}, mini(maxi(s.HuntSpread, 1), 4)-1)
@@ -272,7 +293,7 @@ func (p *painter) tiles() {
 func (p *painter) tabs() {
 	c, s, st := p.c, p.s, p.st
 	bar := Rect{388, 90, 556, 32}
-	tw := 79
+	tw := 69
 	pos := st.num("sg:tab", float64(st.Tab))
 	for i, n := range tabNames {
 		id := "tab:" + itoaInt(i)
@@ -328,6 +349,8 @@ func (p *painter) tabs() {
 		p.viewAuction(content)
 	case st.Tab == 6:
 		p.viewLuck(content)
+	case st.Tab == 7:
+		p.viewWishlist(content)
 	}
 	p.fade(content.Inset(1, 1), colCard, from, easeOut(st.enter))
 	_ = s

@@ -130,7 +130,7 @@ svg{display:block;width:100%}
 
     <div class="card">
       <div class="row top"><span class="lab">MODE</span><button class="btn s" id="refresh">refresh</button></div>
-      <div class="seg" id="modeSeg"><button data-v="fixed">Fixed</button><button data-v="advance">Next on Mystical</button><button data-v="hunt">Hunt</button></div>
+      <div class="seg" id="modeSeg"><button data-v="fixed">Fixed</button><button data-v="advance">Next on Mystical</button><button data-v="hunt">Hunt</button><button data-v="least">Least</button><button data-v="wish">Wish</button></div>
       <div id="modeBody"></div>
     </div>
 
@@ -187,7 +187,7 @@ svg{display:block;width:100%}
 const $=id=>document.getElementById(id);
 const RC={Uncommon:"#4ade80",Rare:"#3b8cff",Epic:"#a566ff",Legendary:"#ff9f2e",Chroma:"#2ee6d0",Mystical:"#ff4fa3",Unique:"#ffd84a"};
 const RORDER=["Uncommon","Rare","Epic","Legendary","Chroma","Mystical","Unique"];
-const TABS=["Trians","Stats","Hunt","Log","History","Auction","Luck"];
+const TABS=["Trians","Stats","Hunt","Log","History","Auction","Luck","Wishlist"];
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fmt=n=>Math.round(Number(n)||0).toLocaleString("en-US");
 let ST=null, tab=+(localStorage.getItem("tab")||0), trView=0, search="", histRange=0, aucSel="", busy=false;
@@ -239,7 +239,7 @@ function render(){
   // mode
   for(const b of $("modeSeg").children)b.className=b.dataset.v===s.Mode?"on":"";
   const mb=$("modeBody");
-  const key=s.Mode+"|"+(s.Capsule||"")+"|"+(s.HuntSpread||1)+"|"+o.Capsules.join(",")+"|"+(s.Hunt||[]).map(h=>h.Capsule+h.Workers+h.Odds).join(",");
+  const key=s.Mode+"|"+(s.Capsule||"")+"|"+(s.HuntSpread||1)+"|"+o.Capsules.join(",")+"|"+(s.Hunt||[]).map(h=>h.Capsule+h.Workers+h.Odds).join(",")+"|"+(s.Target||"")+"|"+(s.Wishlist||[]).length;
   if(mb.dataset.k!==key){
     mb.dataset.k=key;
     if(s.Mode==="hunt"){
@@ -247,6 +247,9 @@ function render(){
       mb.innerHTML='<div class="muted" style="margin:8px 0 6px">Aim the workers at the best Mystical odds</div>'
         +'<div class="seg" id="spreadSeg">'+[1,2,3,4].map(i=>'<button data-n="'+i+'" class="'+(i===(s.HuntSpread||1)?"on":"")+'">'+(i===1?"Focus":"Split "+i)+'</button>').join("")+'</div>'
         +'<div class="lab" style="margin-top:8px">Now hunting</div><div>'+(parts.length?parts.join(" · "):"Log in to rank the capsules")+'</div>';
+    }else if(s.Mode==="least"||s.Mode==="wish"){
+      const now=s.Target||(s.Mode==="wish"&&!(s.Wishlist||[]).length?"Star some trians in the Wishlist tab":"Log in to load your trians");
+      mb.innerHTML='<div class="muted" style="margin:8px 0 6px">'+(s.Mode==="wish"?"Go for the wishlist trian you own the fewest of":"Go for the trian you own the fewest of (random if tied)")+'</div><div class="lab">Now going for</div><div style="font-size:15px;font-weight:700">'+esc(now)+'</div>';
     }else{
       mb.innerHTML='<div class="chips">'+o.Capsules.map(c=>'<div class="chip'+(c===s.Capsule?" on":"")+'" data-c="'+esc(c)+'" title="'+esc(c)+'">'+esc(c)+'</div>').join("")+'</div>';
     }
@@ -294,12 +297,12 @@ function drawView(){
   const s=ST.Snap,v=$("view");
   const sig=[tab,trView,histRange,aucSel,search].join("|");
   const full=viewKey!==sig;
-  const data=JSON.stringify([tab,tab===0?[s.Inv&&s.Inv.length,s.Missing&&s.Missing.length,s.Collected]:tab===1?[s.Counts,s.Series&&s.Series.length,s.Opened]:tab===2?[s.Hunt,s.StopAfter,s.HuntMissing,s.PacksLeft,s.SinceMystical,s.MysticalRun,s.PacksPerMystical]:tab===3?[s.Log&&s.Log.length&&s.Log[0].Time,s.AlertSound]:tab===4?[s.Hist&&s.Hist.length,s.Hist&&s.Hist.length&&s.Hist[s.Hist.length-1]]:[s.AuctionMsg,s.AuctionBusy,s.Inv&&s.Inv.length]:[s.ETA,s.Luck]]);
+  const data=JSON.stringify([tab,tab===0?[s.Inv&&s.Inv.length,s.Missing&&s.Missing.length,s.Collected]:tab===1?[s.Counts,s.Series&&s.Series.length,s.Opened]:tab===2?[s.Hunt,s.StopAfter,s.HuntMissing,s.PacksLeft,s.SinceMystical,s.MysticalRun,s.PacksPerMystical]:tab===3?[s.Log&&s.Log.length&&s.Log[0].Time,s.AlertSound]:tab===4?[s.Hist&&s.Hist.length,s.Hist&&s.Hist.length&&s.Hist[s.Hist.length-1]]:tab===5?[s.AuctionMsg,s.AuctionBusy,s.Inv&&s.Inv.length]:tab===6?[s.ETA,s.Luck]:[s.Wishlist,s.Inv&&s.Inv.length]]);
   if(!full&&v.dataset.d===data)return;
   const keepScroll=full?0:(v.querySelector(".grid2")||{}).scrollTop||0;
   v.dataset.d=data;
   if(full){viewKey=sig;v.classList.remove("view");void v.offsetWidth;v.classList.add("view")}
-  [vTrians,vStats,vHunt,vLog,vHistory,vAuction,vLuck][tab](v,s);
+  [vTrians,vStats,vHunt,vLog,vHistory,vAuction,vLuck,vWish][tab](v,s);
   const g=v.querySelector(".grid2");if(g&&keepScroll)g.scrollTop=keepScroll;
 }
 
@@ -412,6 +415,16 @@ function vAuction(v,s){
   const b=$("alist");if(b)b.onclick=()=>act("auction",{s:aucSel,amount:+$("aam").value||0,bid:+$("abid").value||0,pay:+$("apay").value||0});
 }
 
+const ALLT=__TRIANS__;
+function vWish(v,s){
+  const wl=(s.Wishlist||[]).map(x=>x.toLowerCase()),q={};
+  (s.Inv||[]).forEach(t=>{q[t.Name.toLowerCase()]=(q[t.Name.toLowerCase()]||0)+t.Qty});
+  const on=t=>wl.includes(t.n.toLowerCase());
+  const list=ALLT.filter(on).concat(ALLT.filter(t=>!on(t)));
+  v.innerHTML='<div class="lab">WISHLIST</div><div class="dim" style="margin-bottom:8px">'+wl.length+' starred. Click a trian to star it. Use the Wish mode to go for them; you get an alert on the first drop.</div><div class="grid2" style="grid-template-columns:1fr;max-height:60vh">'
+   +list.map(t=>{const n=q[t.n.toLowerCase()]||0,w=on(t);return '<div class="tri" data-w="'+esc(t.n)+'" style="--c:'+(RC[t.r]||"#3b8cff")+';cursor:pointer;'+(w?"outline:2px solid var(--accent)":"")+'"><div class="t"></div><div class="n">'+(w?"★ ":"☆ ")+esc(t.n)+'</div><div class="q">'+(n?"x"+fmt(n):"missing")+'</div></div>'}).join("")+'</div>';
+  v.querySelectorAll("[data-w]").forEach(el=>el.onclick=()=>act("wish",{s:el.dataset.w}));
+}
 function etaTxt(p,rate){if(p<=0)return"done";let t=fmt(Math.round(p))+" packs";if(rate>0){const m=Math.round(p/rate/60);t+=" (~"+(m<60?m+"m":Math.floor(m/60)+"h "+m%60+"m")+")"}return t}
 function vLuck(v,s){
   const e=s.ETA||{},l=s.Luck||{};

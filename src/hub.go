@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -22,10 +23,12 @@ var (
 )
 
 type Hub struct {
-	mu      sync.Mutex
-	primary *App
-	workers []*App
-	pool    *CoinPool
+	leastPick   string // trian the Least / Wish mode is on
+	leastTarget string
+	mu          sync.Mutex
+	primary     *App
+	workers     []*App
+	pool        *CoinPool
 
 	want      bool // the person pressed Start
 	supOn     bool
@@ -129,7 +132,7 @@ func (h *Hub) newExtra() *App {
 	a := &App{
 		dir:        p.dir,
 		cfg:        cfg,
-		client:     p.client,
+		client:     &http.Client{Transport: newTransport(), Timeout: p.client.Timeout}, // its own connection(s) to the site
 		errBackoff: p.errBackoff,
 		lastNew:    "NONE",
 		lastRare:   "NONE",
@@ -209,9 +212,25 @@ func (h *Hub) sync() {
 	for i := range targets {
 		targets[i] = cfg.Capsule
 	}
-	if cfg.Mode == "hunt" {
+	target := ""
+	switch cfg.Mode {
+	case "hunt":
 		targets = huntAssign(rows, cfg.HuntSpread, n)
+	case "least", "wish":
+		var only []string
+		if cfg.Mode == "wish" {
+			only = append([]string{}, cfg.Wishlist...)
+		}
+		name, capsule := leastTarget(inv, only, h.leastPick)
+		h.leastPick = name
+		if capsule != "" && len(inv) > 0 {
+			target = name
+			for i := range targets {
+				targets[i] = capsule
+			}
+		}
 	}
+	h.leastTarget = target
 	for i := range rows {
 		for _, t := range targets {
 			if t == rows[i].Capsule {
@@ -233,7 +252,7 @@ func (h *Hub) sync() {
 			w.cfg.LoginPath, w.cfg.LoginField = cfg.LoginPath, cfg.LoginField
 			w.chances, w.hints, w.capsules = chances, hints, caps
 		}
-		if cfg.Mode == "hunt" && targets[i] != "" {
+		if (cfg.Mode == "hunt" || (target != "" && (cfg.Mode == "least" || cfg.Mode == "wish"))) && targets[i] != "" {
 			w.cfg.Capsule = targets[i]
 		} else if w != p {
 			w.cfg.Capsule = cfg.Capsule
@@ -504,6 +523,9 @@ func (h *Hub) onPull(a *App, capsule string, r openResp) {
 	h.recordHist(r.Rarity)
 	h.recordOdds(capsule, r.Rarity)
 	h.logPull(capsule, r)
+	if r.New && h.wished(r.Trian) {
+		h.alert("rare", "Wishlist trian!", fmt.Sprintf("%s from the %s capsule", r.Trian, capsule))
+	}
 	if r.Rarity == "Chroma" || isMyst {
 		p.mu.Lock()
 		p.lastRare = r.Trian
@@ -594,6 +616,8 @@ func (h *Hub) Snapshot() Snapshot {
 	s.Protected = sealImpl != nil
 	s.KeepAwake = cfg.KeepAwake
 	s.HourlySummary = cfg.HourlySummary
+	s.Wishlist = append([]string(nil), cfg.Wishlist...)
+	s.Target = h.leastTarget // h.mu is held here
 	s.DownText = FormatDowntime(cfg.Downtime)
 	s.Down, s.DownEnd = DownNow(cfg.Downtime, time.Now())
 	if cfg.WhatsNewVer == appVersion {
@@ -668,4 +692,33 @@ func (h *Hub) SetDowntime(text string) string {
 	}
 	h.update(func(c *Config) { c.Downtime = w })
 	return ""
+}
+
+func (h *Hub) wished(name string) bool {
+	k := lowerKey(name)
+	for _, w := range h.cfg().Wishlist {
+		if lowerKey(w) == k {
+			return true
+		}
+	}
+	return false
+}
+
+// ToggleWish adds the trian to the wishlist, or removes it if it is already there.
+func (h *Hub) ToggleWish(name string) {
+	h.update(func(c *Config) {
+		k := lowerKey(name)
+		for i, w := range c.Wishlist {
+			if lowerKey(w) == k {
+				c.Wishlist = append(append([]string{}, c.Wishlist[:i]...), c.Wishlist[i+1:]...)
+				return
+			}
+		}
+		for _, t := range builtinTrians {
+			if lowerKey(t.Name) == k {
+				c.Wishlist = append(append([]string{}, c.Wishlist...), t.Name)
+				return
+			}
+		}
+	})
 }

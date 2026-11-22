@@ -704,7 +704,7 @@ func handleClick(id string) {
 	case id == "inflight+":
 		hub.SetInFlight(c.InFlight + 1)
 	case strings.HasPrefix(id, "mode:"):
-		hub.SetMode([]string{"fixed", "advance", "hunt"}[atoiOr(id[5:], 1)%3])
+		hub.SetMode([]string{"fixed", "advance", "hunt", "least", "wish"}[atoiOr(id[5:], 1)%5])
 	case strings.HasPrefix(id, "spread:"):
 		hub.SetSpread(atoiOr(id[7:], 0) + 1)
 	case strings.HasPrefix(id, "cap:"):
@@ -814,6 +814,8 @@ func handleClick(id string) {
 				dirty = true
 			}()
 		}
+	case strings.HasPrefix(id, "wish:"):
+		hub.ToggleWish(strings.TrimPrefix(id, "wish:"))
 	case id == "diag":
 		if setClipboardText(Diagnostics(hub.Snapshot())) {
 			ui.DiagAt = ui.Now
@@ -912,6 +914,8 @@ func panelWndProc(hwnd, msg, wparam, lparam uintptr) uintptr {
 			key = "inv"
 		case strings.HasPrefix(h, "pick:"), h == "scroll:auc":
 			key = "auc"
+		case strings.HasPrefix(h, "wish:"), h == "scroll:wish":
+			key = "wish"
 		case strings.HasPrefix(h, "log:"), h == "scroll:log":
 			key = "log"
 		}

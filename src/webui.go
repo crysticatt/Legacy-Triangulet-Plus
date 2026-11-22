@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bytes"
 	_ "embed"
 	"encoding/base64"
 	"encoding/json"
@@ -22,7 +23,22 @@ import (
 // serves a dashboard on 127.0.0.1 that you open in the browser.
 
 //go:embed webui.html
-var webPage []byte
+var webPageRaw []byte
+
+// webPage is the dashboard with the list of every trian filled in.
+var webPage = func() []byte {
+	type tr struct {
+		N string `json:"n"`
+		R string `json:"r"`
+		C string `json:"c"`
+	}
+	var l []tr
+	for _, t := range builtinTrians {
+		l = append(l, tr{t.Name, t.Rarity, t.Capsule})
+	}
+	j, _ := json.Marshal(l)
+	return bytes.Replace(webPageRaw, []byte("__TRIANS__"), j, 1)
+}()
 
 type webServer struct {
 	hub      *Hub
@@ -241,7 +257,7 @@ func (w *webServer) doAction(rw http.ResponseWriter, r *http.Request) {
 		}
 		h.Login(user, pass)
 	case "mode":
-		if q.S != "fixed" && q.S != "advance" && q.S != "hunt" {
+		if q.S != "fixed" && q.S != "advance" && q.S != "hunt" && q.S != "least" && q.S != "wish" {
 			reply(errors.New("unknown mode"))
 			return
 		}
@@ -283,6 +299,8 @@ func (w *webServer) doAction(rw http.ResponseWriter, r *http.Request) {
 			reply(errors.New(m))
 			return
 		}
+	case "wish":
+		h.ToggleWish(q.S)
 	case "diag":
 		note = Diagnostics(h.Snapshot())
 	case "downtime":

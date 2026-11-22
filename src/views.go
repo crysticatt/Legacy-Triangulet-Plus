@@ -665,3 +665,74 @@ func diagCaption(st *UIState) string {
 	}
 	return "Copy diagnostics"
 }
+
+// ---------- Wishlist ----------
+
+func (p *painter) viewWishlist(r Rect) {
+	s, st := p.s, p.st
+	wished := map[string]bool{}
+	for _, w := range s.Wishlist {
+		wished[lowerKey(w)] = true
+	}
+	qty := map[string]int{}
+	for _, it := range s.Inv {
+		qty[lowerKey(it.Name)] += it.Qty
+	}
+	p.label(r.X+12, r.Y+10, "WISHLIST")
+	p.text(Rect{r.X + 12, r.Y + 28, r.W - 24, 16}, fmt.Sprintf("%d starred. Click a trian to star it. Use the Wish mode to go for them; you get an alert on the first drop.", len(s.Wishlist)), 11, false, colMuted, 0)
+	// starred first, then the rest in game order
+	var list []builtinTrian
+	for _, t := range builtinTrians {
+		if wished[lowerKey(t.Name)] {
+			list = append(list, t)
+		}
+	}
+	for _, t := range builtinTrians {
+		if !wished[lowerKey(t.Name)] {
+			list = append(list, t)
+		}
+	}
+	area := Rect{r.X + 12, r.Y + 52, r.W - 24, r.H - 62}
+	rowH := 28
+	total := len(list) * rowH
+	maxScroll := maxi(0, total-area.H+8)
+	p.f.MaxScroll["wish"] = maxScroll
+	off := mini(maxi(st.Scroll["wish"], 0), maxScroll)
+	p.f.hit(area, "scroll:wish") // first, so the rows registered after it stay on top
+	p.c.SetClip(area)
+	for i, t := range list {
+		row := Rect{area.X, area.Y + i*rowH - off, area.W - 10, rowH - 2}
+		if row.Y+row.H < area.Y || row.Y > area.Y+area.H {
+			continue
+		}
+		id := "wish:" + t.Name
+		on := wished[lowerKey(t.Name)]
+		h := st.hv(id)
+		fill := lerpCol(colField, colCardHi, h)
+		if on {
+			fill = lerpCol(colAccentD, colAccent, h*0.4)
+		}
+		p.c.RoundRect(row, 6, fill)
+		star := "☆"
+		sc := colDim
+		if on {
+			star, sc = "★", colWarn
+		}
+		p.text(Rect{row.X + 6, row.Y, 22, row.H}, star, 14, true, sc, 1)
+		rc := rarityColors[t.Rarity]
+		p.c.Circle(float64(row.X+40), float64(row.Y+row.H/2), 3.5, rc)
+		p.text(Rect{row.X + 52, row.Y, row.W - 200, row.H}, t.Name, 12, on, colText, 0)
+		p.text(Rect{row.X + row.W - 150, row.Y, 70, row.H}, t.Capsule, 11, false, colDim, 0)
+		q := qty[lowerKey(t.Name)]
+		qs, qc := "x"+fmtInt(q), colMuted
+		if q == 0 {
+			qs, qc = "missing", colBad
+		}
+		p.text(Rect{row.X + row.W - 76, row.Y, 70, row.H}, qs, 12, true, qc, 2)
+		if vis := row.Intersect(area); !vis.Empty() {
+			p.f.hit(vis, id)
+		}
+	}
+	p.c.ResetClip()
+	p.scrollbar(area, total, off)
+}
