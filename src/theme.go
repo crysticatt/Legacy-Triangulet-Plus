@@ -44,7 +44,10 @@ var curTheme = "dark"
 
 func normTheme(name string) string {
 	name = strings.ToLower(strings.TrimSpace(name))
-	if _, ok := themes[name]; ok {
+	themesMu.RLock()
+	_, ok := themes[name]
+	themesMu.RUnlock()
+	if ok {
 		return name
 	}
 	return "dark"
@@ -63,7 +66,9 @@ func themeIndex(name string) int {
 // applyTheme switches every colour the painter uses.
 func applyTheme(name string) {
 	curTheme = normTheme(name)
+	themesMu.RLock()
 	t := themes[curTheme]
+	themesMu.RUnlock()
 	colBg, colPanel, colCard, colCardHi, colEdge, colField = t.Bg, t.Panel, t.Card, t.CardHi, t.Edge, t.Field
 	colAccent, colAccentD, colCyan = t.Accent, t.AccentD, t.Cyan
 	colText, colMuted, colDim = t.Text, t.Muted, t.Dim

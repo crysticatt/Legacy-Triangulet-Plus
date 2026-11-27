@@ -50,26 +50,27 @@ type Config struct {
 	WebhookURL string `json:"webhookUrl"`
 	CoinCost   int    `json:"coinCost"` // coins per capsule (25)
 
-	HuntMissing       bool      `json:"huntMissing"`       // hunt: aim at Mystical trians you don't own yet (falls back to all Mysticals)
-	StopAfterMystical int       `json:"stopAfterMystical"` // stop opening after this many Mysticals in one run (0 = never)
-	AlertSound        bool      `json:"alertSound"`
-	Accounts          []Account `json:"accounts"`      // saved logins to switch between
-	UpdateRepo        string    `json:"updateRepo"`    // GitHub owner/repo to check for new versions (empty = default)
-	NoUpdateCheck     bool      `json:"noUpdateCheck"` // never look for updates
-	CfgVer            int       `json:"cfgVer"`        // settings file generation, for one-time upgrades
-	HuntMeasured      bool      `json:"huntMeasured"`  // hunt: blend the advertised odds with the odds measured from your own pulls
-	HourlySummary     bool      `json:"hourlySummary"` // each hour: a notification (and ntfy / Discord) with the last hour's numbers
-	Wishlist          []string  `json:"wishlist"`      // trians you want (Wishlist tab)
-	Downtime          []DownWin `json:"downtime"`      // daily hours the opener stays paused
-	KeepAwake         bool      `json:"keepAwake"`     // stop the PC sleeping while opening (the screen may still turn off)
-	Theme             string    `json:"theme"`         // dark, light or blue
-	NtfyOn            bool      `json:"ntfyOn"`        // send alerts to your phone through ntfy
-	NtfyTopic         string    `json:"ntfyTopic"`     // your private ntfy topic name
-	NtfyServer        string    `json:"ntfyServer"`    // empty = https://ntfy.sh
-	AutoUpdate        bool      `json:"autoUpdate"`    // install updates by itself (Windows: only while the window is hidden)
-	WhatsNewVer       string    `json:"whatsNewVer"`   // set when an update was installed: show its notes once
-	WhatsNewNotes     string    `json:"whatsNewNotes"`
-	AlertLowPacks     int       `json:"alertLowPacks"` // warn when fewer than this many packs are left (0 = off)
+	HuntMissing       bool          `json:"huntMissing"`       // hunt: aim at Mystical trians you don't own yet (falls back to all Mysticals)
+	StopAfterMystical int           `json:"stopAfterMystical"` // stop opening after this many Mysticals in one run (0 = never)
+	AlertSound        bool          `json:"alertSound"`
+	Accounts          []Account     `json:"accounts"`      // saved logins to switch between
+	UpdateRepo        string        `json:"updateRepo"`    // GitHub owner/repo to check for new versions (empty = default)
+	NoUpdateCheck     bool          `json:"noUpdateCheck"` // never look for updates
+	CfgVer            int           `json:"cfgVer"`        // settings file generation, for one-time upgrades
+	HuntMeasured      bool          `json:"huntMeasured"`  // hunt: blend the advertised odds with the odds measured from your own pulls
+	HourlySummary     bool          `json:"hourlySummary"` // each hour: a notification (and ntfy / Discord) with the last hour's numbers
+	Wishlist          []string      `json:"wishlist"`      // trians you want (Wishlist tab)
+	Downtime          []DownWin     `json:"downtime"`      // daily hours the opener stays paused
+	KeepAwake         bool          `json:"keepAwake"`     // stop the PC sleeping while opening (the screen may still turn off)
+	Theme             string        `json:"theme"`         // dark, light, blue or custom:<name>
+	CustomThemes      []CustomTheme `json:"customThemes"`
+	NtfyOn            bool          `json:"ntfyOn"`      // send alerts to your phone through ntfy
+	NtfyTopic         string        `json:"ntfyTopic"`   // your private ntfy topic name
+	NtfyServer        string        `json:"ntfyServer"`  // empty = https://ntfy.sh
+	AutoUpdate        bool          `json:"autoUpdate"`  // install updates by itself (Windows: only while the window is hidden)
+	WhatsNewVer       string        `json:"whatsNewVer"` // set when an update was installed: show its notes once
+	WhatsNewNotes     string        `json:"whatsNewNotes"`
+	AlertLowPacks     int           `json:"alertLowPacks"` // warn when fewer than this many packs are left (0 = off)
 }
 
 type openResp struct {
@@ -898,6 +899,8 @@ type Snapshot struct {
 	UpdateNote       string // result of a manual "check for updates"
 	AutoUpdate       bool
 	Theme            string
+	CustomThemes     []CustomTheme
+	ThemeVars        map[string]string // palette of the theme in use, as CSS variables (dashboard)
 	KeepAwake        bool
 	HourlySummary    bool
 	Wishlist         []string

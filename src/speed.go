@@ -30,7 +30,7 @@ func (c *Config) fix() {
 		c.Workers = maxWorkers
 	}
 	switch c.Mode {
-	case "fixed", "advance", "hunt":
+	case "fixed", "advance", "hunt", "least", "wish":
 	default:
 		c.Mode = "advance"
 	}

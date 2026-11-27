@@ -145,7 +145,7 @@ func main() {
 	version := flag.Bool("version", false, "print the version")
 	flag.Parse()
 	if *version {
-		fmt.Println("Triangulet Opener", appVersion)
+		fmt.Println("Triangulet Plus", appVersion)
 		return
 	}
 	if *data != "" {
@@ -212,7 +212,7 @@ func main() {
 	}
 
 	url := "http://127.0.0.1:" + strconv.Itoa(portNum)
-	fmt.Println("Triangulet Opener " + appVersion + " is running. Dashboard: " + url)
+	fmt.Println("Triangulet Plus " + appVersion + " is running. Dashboard: " + url)
 	if !*background && !*noBrowser {
 		openBrowser(url)
 	}

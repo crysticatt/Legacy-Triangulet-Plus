@@ -15,7 +15,7 @@ logo.resize((256, 256), Image.LANCZOS).save("appicon.png")
 manifest = f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
  <assemblyIdentity type="win32" name="TrianguletOpener" version="{ver}.0.0.0" processorArchitecture="*"/>
- <description>Triangulet Opener</description>
+ <description>Triangulet Plus</description>
  <dependency><dependentAssembly><assemblyIdentity type="win32" name="Microsoft.Windows.Common-Controls" version="6.0.0.0" processorArchitecture="*" publicKeyToken="6595b64144ccf1df" language="*"/></dependentAssembly></dependency>
  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3"><security><requestedPrivileges><requestedExecutionLevel level="asInvoker" uiAccess="false"/></requestedPrivileges></security></trustInfo>
  <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1"><application>
@@ -50,9 +50,9 @@ def node(key, value=b"", wtype=1, children=b"", vlen=None):
 v = [int(x) for x in (ver.split(".") + ["0", "0", "0"])[:4]]
 fixed = struct.pack("<IIIIIIIIIIIII", 0xFEEF04BD, 0x10000, (v[0] << 16) | v[1], (v[2] << 16) | v[3], (v[0] << 16) | v[1], (v[2] << 16) | v[3],
                     0x3F, 0, 0x40004, 1, 0, 0, 0)
-strs = {"CompanyName": "Triangulet Opener", "FileDescription": "Triangulet Opener - background capsule opener",
+strs = {"CompanyName": "Triangulet Plus", "FileDescription": "Triangulet Plus - background capsule opener",
         "FileVersion": ver + ".0.0.0", "InternalName": "TrianguletOpener", "OriginalFilename": "TrianguletOpener.exe",
-        "ProductName": "Triangulet Opener", "ProductVersion": ver + ".0.0.0", "LegalCopyright": "Fan-made tool"}
+        "ProductName": "Triangulet Plus", "ProductVersion": ver + ".0.0.0", "LegalCopyright": "Fan-made tool"}
 tbl = b"".join(pad4(node(k, u16(val), 1, vlen=len(val) + 1)) for k, val in strs.items())
 st = node("040904B0", b"", 1, tbl, vlen=0)
 sfi = node("StringFileInfo", b"", 1, pad4(st), vlen=0)

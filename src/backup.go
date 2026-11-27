@@ -87,7 +87,7 @@ func sealBackup(plain []byte, pass string) ([]byte, error) {
 func openBackup(file []byte, pass string) ([]byte, error) {
 	hdr := len(backupMagic) + 16 + 12
 	if len(file) < hdr+16 || !bytes.HasPrefix(file, []byte(backupMagic)) {
-		return nil, errors.New("this is not a Triangulet Opener backup file")
+		return nil, errors.New("this is not a Triangulet Plus backup file")
 	}
 	salt := file[len(backupMagic) : len(backupMagic)+16]
 	nonce := file[len(backupMagic)+16 : hdr]

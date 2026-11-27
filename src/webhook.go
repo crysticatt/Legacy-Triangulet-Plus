@@ -15,7 +15,7 @@ func (h *Hub) webhookText(title, text string) {
 		return
 	}
 	body, _ := json.Marshal(map[string]any{
-		"username": "Triangulet Opener",
+		"username": "Triangulet Plus",
 		"embeds":   []map[string]any{{"title": title, "description": text, "color": 0x3B8CFF}},
 	})
 	resp, err := (&http.Client{Timeout: 10 * time.Second}).Post(cfg.WebhookURL, "application/json", bytes.NewReader(body))
@@ -32,7 +32,7 @@ func (h *Hub) webhook(r openResp, capsule string) {
 	}
 	desc := fmt.Sprintf("**%s** (%s) from the **%s** capsule", r.Trian, r.Rarity, capsule)
 	body, _ := json.Marshal(map[string]any{
-		"username": "Triangulet Opener",
+		"username": "Triangulet Plus",
 		"embeds": []map[string]any{{
 			"title":       r.Rarity + " pulled!",
 			"description": desc,

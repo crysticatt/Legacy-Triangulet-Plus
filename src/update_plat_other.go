@@ -10,7 +10,7 @@ import (
 
 // The release file for a Mac is a bare program named like TrianguletOpener-mac-arm64-v36
 // (or -amd64-) next to the .zip that people download by hand.
-var macAsset = regexp.MustCompile(`^TrianguletOpener-mac-` + runtime.GOARCH + `-v[0-9.]+$`)
+var macAsset = regexp.MustCompile(`^Triangulet(Opener|Plus)-mac-` + runtime.GOARCH + `-v[0-9.]+$`)
 
 var assetMatch = func(name string) bool { return macAsset.MatchString(name) }
 

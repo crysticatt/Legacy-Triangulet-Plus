@@ -144,6 +144,10 @@ type doReq struct {
 	Amount int     `json:"amount"`
 	Bid    int     `json:"bid"`
 	Pay    int     `json:"pay"`
+	Bg     string  `json:"bg"`
+	Card   string  `json:"card"`
+	Accent string  `json:"accent"`
+	Text   string  `json:"text"`
 }
 
 // guard lets only this dashboard's own page act: a page on another site can't send the header
@@ -292,6 +296,14 @@ func (w *webServer) doAction(rw http.ResponseWriter, r *http.Request) {
 		h.update(func(c *Config) { c.HourlySummary = q.On })
 	case "awake":
 		h.update(func(c *Config) { c.KeepAwake = q.On })
+	case "themesave":
+		if err := h.SaveCustomTheme(CustomTheme{Name: q.S, Bg: q.Bg, Card: q.Card, Accent: q.Accent, Text: q.Text}); err != nil {
+			reply(err)
+			return
+		}
+		h.SetTheme("custom:" + strings.ToLower(cleanName(q.S)))
+	case "themedel":
+		h.DeleteCustomTheme(q.S)
 	case "theme":
 		h.SetTheme(q.S)
 	case "ntfy":

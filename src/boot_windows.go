@@ -54,7 +54,7 @@ func setBoot(on bool) {
 	verb, file, params := utf16Ptr("runas"), utf16Ptr("schtasks.exe"), utf16Ptr(args)
 	r, _, _ := pShellExecute.Call(0, uintptr(unsafe.Pointer(verb)), uintptr(unsafe.Pointer(file)), uintptr(unsafe.Pointer(params)), 0, 0 /*SW_HIDE*/)
 	if r <= 32 {
-		messageBox("Triangulet Opener", "Windows did not allow the change (the approval prompt was declined).", mbOK|mbIconWarning)
+		messageBox("Triangulet Plus", "Windows did not allow the change (the approval prompt was declined).", mbOK|mbIconWarning)
 		return
 	}
 	bootChecked = time.Time{}

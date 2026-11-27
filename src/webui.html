@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Triangulet Opener</title>
+<title>Triangulet Plus</title>
 <style>
 :root{
   --bg:#0a1122;--panel:#0d162c;--card:#121e3a;--edge:#22345e;--field:#091020;
@@ -116,7 +116,7 @@ svg{display:block;width:100%}
   <div class="left">
     <div class="head">
       <div class="logo">T</div>
-      <div><h1>Triangulet Opener</h1><div class="sub" id="sub"></div></div>
+      <div><h1>Triangulet Plus</h1><div class="sub" id="sub"></div></div>
       <div class="sp"></div>
       <div class="pill" id="pill"><i></i><span>Idle</span></div>
     </div>
@@ -163,7 +163,12 @@ svg{display:block;width:100%}
 </div>
 <div class="modal" id="modal"><div class="sheet">
   <div class="row top" style="margin:0"><h2>Settings</h2><button class="btn s" id="setClose">Close</button></div>
-  <div class="sec"><span class="lab">THEME</span><div class="seg" id="themeSeg"><button data-v="dark">Dark</button><button data-v="light">Light</button><button data-v="blue">Blue</button></div></div>
+  <div class="sec"><span class="lab">THEME</span><div class="seg" id="themeSeg"><button data-v="dark">Dark</button><button data-v="light">Light</button><button data-v="blue">Blue</button></div>
+    <div class="row" id="ctChips" style="flex-wrap:wrap;gap:6px;margin-top:8px"></div>
+    <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:8px;align-items:center"><input type="text" id="ctName" placeholder="theme name" maxlength="24" style="width:130px">
+     <label class="dim">Background <input type="color" id="ctBg" value="#0b1020"></label><label class="dim">Cards <input type="color" id="ctCard" value="#151c33"></label><label class="dim">Accent <input type="color" id="ctAcc" value="#3b8cff"></label><label class="dim">Text <input type="color" id="ctText" value="#e8eefc"></label>
+     <button class="btn s" id="ctSave">Save theme</button><button class="btn s" id="ctDel">Delete</button></div>
+    <div class="dim">Make your own look: pick four colours and give it a name. Up to 12 themes.</div></div>
   <div class="sec"><span class="lab">POWER</span><div class="row"><div class="tog" id="tAwake"><b></b>Keep my Mac awake while opening (the screen can still turn off)</div></div><div class="row"><div class="tog" id="tHourly"><b></b>Hourly summary notification (packs, Mystical, Chroma, coins)</div></div></div>
   <div class="sec"><div class="row"><span class="lab" style="flex:1">UPDATES</span><button class="btn s" id="chkUpd">Check for updates</button></div>
     <div class="dim" id="updNote"></div>
@@ -218,7 +223,7 @@ function setIfIdle(el,v){if(document.activeElement!==el&&el.value!==v)el.value=v
 
 function render(){
   const o=ST,s=o.Snap;
-  document.title=(s.Running?"▶ ":"")+"Triangulet Opener";
+  document.title=(s.Running?"▶ ":"")+"Triangulet Plus";
   // header
   const sub=$("sub");
   let line=s.Running?('Opening'+(s.Mode==="hunt"?" (hunting)":' "'+(s.Capsule||"")+'"')+" | "+fmt(s.AcctOpened||s.Opened)+" opened"):(s.Info||"Idle");
@@ -262,7 +267,7 @@ function render(){
   {const has=!!(s.UpdateVer||s.UpdateMsg);$("updrow").style.display=has?"flex":"none";
    $("updline").textContent=s.UpdateMsg?s.UpdateMsg:(s.UpdateVer?"Version "+s.UpdateVer+" is available":"");
    $("updbtn").textContent=s.UpdateBusy?"Updating...":(s.UpdateMsg?"Retry":"Update");$("updbtn").disabled=!!s.UpdateBusy;$("updbtn").style.display=s.UpdateVer?"":"none";}
-  applyTheme(s.Theme);
+  applyTheme(s.Theme,s.ThemeVars);ctDraw(s);
   document.querySelectorAll("#themeSeg button").forEach(b=>b.className=b.dataset.v===s.Theme?"on":"");
   $("tUpdCheck").className="tog"+(s.NoUpdateCheck?"":" on");$("tAutoUpd").className="tog"+(s.AutoUpdate?" on":"");$("tNtfy").className="tog"+(s.NtfyOn?" on":"");$("tAwake").className="tog"+(s.KeepAwake?" on":"");$("tHourly").className="tog"+(s.HourlySummary?" on":"");
   $("updNote").textContent=s.UpdateVer?("Version "+s.UpdateVer+" is available (see the Update button on the left)"):(s.UpdateNote||("You are on version "+o.Version));
@@ -453,7 +458,13 @@ $("delay").onchange=applyDelay;$("delay").onkeydown=e=>{if(e.key==="Enter"){appl
 $("updbtn").onclick=()=>{if(confirm("Install the update and restart the opener?"))act("update")};
 $("speedtest").onclick=()=>act("speedtest");
 // ---- settings ----
-function applyTheme(t){document.documentElement.setAttribute("data-theme",t||"dark")}
+let ctVars={};
+function applyTheme(t,vars){const r=document.documentElement;r.setAttribute("data-theme",(t||"dark").startsWith("custom:")?"custom":(t||"dark"));
+  for(const k of Object.keys(ctVars))r.style.removeProperty(k);ctVars={};
+  if((t||"").startsWith("custom:")&&vars){for(const k in vars){r.style.setProperty(k,vars[k])}ctVars=vars}}
+function ctDraw(s){const box=$("ctChips"),list=s.CustomThemes||[],key=JSON.stringify([list,s.Theme]);if(box.dataset.k===key)return;box.dataset.k=key;box.innerHTML="";
+  list.forEach(c=>{const b=document.createElement("button");b.className="btn s"+(s.Theme==="custom:"+c.name.toLowerCase()?" on":"");b.textContent=c.name;b.style.borderLeft="6px solid "+c.accent;
+   b.onclick=()=>{$("ctName").value=c.name;$("ctBg").value=c.bg;$("ctCard").value=c.card;$("ctAcc").value=c.accent;$("ctText").value=c.text;act("theme",{s:"custom:"+c.name.toLowerCase()})};box.appendChild(b)})}
 function setMsg(m){$("setMsg").textContent=m||""}
 async function actMsg(a,extra){
   try{const r=await fetch("/api/do",{method:"POST",headers:{"Content-Type":"application/json","X-Opener":"1"},body:JSON.stringify(Object.assign({a},extra||{}))});
@@ -463,6 +474,8 @@ $("downText").onchange=async()=>{await actMsg("downtime",{s:$("downText").value}
 $("setClose").onclick=()=>{$("modal").classList.remove("show");setMsg("")};
 $("modal").onclick=e=>{if(e.target===$("modal"))$("setClose").onclick()};
 document.querySelectorAll("#themeSeg button").forEach(b=>b.onclick=()=>{applyTheme(b.dataset.v);act("theme",{s:b.dataset.v})});
+$("ctSave").onclick=async()=>{await actMsg("themesave",{s:$("ctName").value,bg:$("ctBg").value,card:$("ctCard").value,accent:$("ctAcc").value,text:$("ctText").value})};
+$("ctDel").onclick=async()=>{const n=$("ctName").value;if(n)await actMsg("themedel",{s:n})};
 $("chkUpd").onclick=()=>actMsg("checkupdate");
 $("tUpdCheck").onclick=()=>actMsg("updcheck",{on:!!ST.Snap.NoUpdateCheck});
 $("tAutoUpd").onclick=()=>actMsg("autoupdate",{on:!ST.Snap.AutoUpdate});
@@ -494,5 +507,6 @@ $("tDiscord").onclick=()=>act("discord",{on:!ST.DiscordOn});
 poll();setInterval(()=>{if(!document.hidden)poll()},1000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)poll()});
 </script>
+<div style="position:fixed;right:14px;bottom:6px;font-size:11px;color:var(--dim);pointer-events:none">made by crysticat</div>
 </body>
 </html>

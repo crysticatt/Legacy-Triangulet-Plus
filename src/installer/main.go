@@ -1,7 +1,7 @@
 //go:build windows
 
-// Installer for Triangulet Opener (Windows). One file: it contains the app and puts it in
-// %LOCALAPPDATA%\Programs\Triangulet Opener, makes Desktop and Start Menu shortcuts and an
+// Installer for Triangulet Plus (Windows). One file: it contains the app and puts it in
+// %LOCALAPPDATA%\Programs\Triangulet Plus, makes Desktop and Start Menu shortcuts and an
 // entry in Settings > Apps so it can be uninstalled. No admin rights needed.
 //
 //	Setup.exe            install (asks first)
@@ -27,7 +27,8 @@ var appExe []byte
 var version = "dev" // set with -ldflags "-X main.version=36"
 
 const (
-	appTitle  = "Triangulet Opener"
+	appTitle  = "Triangulet Plus"
+	oldTitle  = "Triangulet Opener"
 	exeName   = "TrianguletOpener.exe"
 	uninstKey = `HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\TrianguletOpener`
 	runKey    = `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
@@ -61,7 +62,7 @@ func installDir() string {
 	if base == "" {
 		base = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Local")
 	}
-	return filepath.Join(base, "Programs", appTitle)
+	return filepath.Join(base, "Programs", oldTitle) // same folder as before so updates and settings carry over
 }
 
 func psQuote(s string) string { return "'" + strings.ReplaceAll(s, "'", "''") + "'" }
@@ -85,7 +86,7 @@ func shortcut(folder, target, workDir string) error {
 }
 
 func removeShortcuts() {
-	script := `foreach($f in 'Desktop','Programs'){$p=Join-Path ([Environment]::GetFolderPath($f)) ` + psQuote(appTitle+".lnk") + `;Remove-Item -LiteralPath $p -Force -ErrorAction SilentlyContinue}`
+	script := `foreach($f in 'Desktop','Programs'){$p=Join-Path ([Environment]::GetFolderPath($f)) ` + psQuote(appTitle+".lnk") + `;Remove-Item -LiteralPath $p -Force -ErrorAction SilentlyContinue;$q=Join-Path ([Environment]::GetFolderPath($f)) ` + psQuote(oldTitle+".lnk") + `;Remove-Item -LiteralPath $q -Force -ErrorAction SilentlyContinue}`
 	_ = hidden("powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", script).Run()
 }
 
@@ -139,6 +140,7 @@ func install(silent bool) error {
 		_ = os.WriteFile(un, b, 0o755)
 	}
 
+	removeShortcuts() // drops the old "Triangulet Opener" shortcuts
 	var warn []string
 	if err := shortcut("Desktop", exe, dir); err != nil {
 		warn = append(warn, "Desktop shortcut: "+err.Error())
@@ -166,7 +168,7 @@ func install(silent bool) error {
 }
 
 func uninstall(silent bool) {
-	if !silent && msgBox("Remove Triangulet Opener from this PC?", mbYesNo|mbIconQuestion) != idYes {
+	if !silent && msgBox("Remove Triangulet Plus from this PC?", mbYesNo|mbIconQuestion) != idYes {
 		return
 	}
 	killApp()
@@ -188,7 +190,7 @@ func uninstall(silent bool) {
 	// this program is running from inside the folder: let a helper delete it after we exit
 	_ = hidden("cmd.exe", "/C", "ping 127.0.0.1 -n 3 >nul & rmdir /S /Q \""+dir+"\"").Start()
 	if !silent {
-		msgBox("Triangulet Opener was removed.\n\nIf you turned on \"Before sign-in\", open Task Scheduler and delete the task named TrianguletOpenerBoot (it needs admin).", mbOK|mbIconInfo)
+		msgBox("Triangulet Plus was removed.\n\nIf you turned on \"Before sign-in\", open Task Scheduler and delete the task named TrianguletOpenerBoot (it needs admin).", mbOK|mbIconInfo)
 	}
 }
 
@@ -208,7 +210,7 @@ func main() {
 		uninstall(silent)
 		return
 	}
-	if !silent && msgBox("Install Triangulet Opener "+version+"?\n\nIt will be installed for your account only, with a shortcut on your Desktop and in the Start Menu. No admin rights needed.", mbYesNo|mbIconQuestion) != idYes {
+	if !silent && msgBox("Install Triangulet Plus "+version+"?\n\nIt will be installed for your account only, with a shortcut on your Desktop and in the Start Menu. No admin rights needed.", mbYesNo|mbIconQuestion) != idYes {
 		return
 	}
 	if err := install(silent); err != nil {
@@ -217,7 +219,7 @@ func main() {
 	}
 	launch := !noLaunch
 	if !silent {
-		launch = msgBox("Installed.\n\nOpen Triangulet Opener now?", mbYesNo|mbIconInfo) == idYes
+		launch = msgBox("Installed.\n\nOpen Triangulet Plus now?", mbYesNo|mbIconInfo) == idYes
 	}
 	if launch {
 		_ = exec.Command(filepath.Join(installDir(), exeName)).Start()

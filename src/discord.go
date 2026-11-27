@@ -122,7 +122,7 @@ func presenceActivity(s Snapshot, since time.Time) map[string]any {
 		"details":    "Opening Capsules",
 		"state":      state,
 		"timestamps": map[string]any{"start": since.Unix()},
-		"assets":     map[string]any{"large_image": "logo", "large_text": "Triangulet Opener"},
+		"assets":     map[string]any{"large_image": "logo", "large_text": "Triangulet Plus"},
 	}
 }
 

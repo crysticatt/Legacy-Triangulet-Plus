@@ -101,6 +101,7 @@ func NewHub(dir string) *Hub {
 		quit:    make(chan struct{}),
 	}
 	p := h.primary
+	registerCustom(p.cfg.CustomThemes)
 	p.pool = h.pool
 	p.onPull = h.onPull
 	p.slots = 1
@@ -160,6 +161,7 @@ func (h *Hub) update(f func(c *Config)) {
 	p.mu.Lock()
 	f(&p.cfg)
 	p.cfg.fix()
+	registerCustom(p.cfg.CustomThemes)
 	p.saveConfigLocked()
 	p.mu.Unlock()
 	h.sync()
@@ -613,6 +615,10 @@ func (h *Hub) Snapshot() Snapshot {
 	s.UpdateBusy, s.UpdateMsg, s.UpdateNote = h.updBusy, h.updMsg, h.updNote
 	s.AutoUpdate = cfg.AutoUpdate
 	s.Theme, s.NtfyOn, s.NtfyTopic, s.NoUpdateCheck = normTheme(cfg.Theme), cfg.NtfyOn, cfg.NtfyTopic, cfg.NoUpdateCheck
+	s.CustomThemes = append([]CustomTheme(nil), cfg.CustomThemes...)
+	themesMu.RLock()
+	s.ThemeVars = themeVars(themes[normTheme(cfg.Theme)])
+	themesMu.RUnlock()
 	s.Protected = sealImpl != nil
 	s.KeepAwake = cfg.KeepAwake
 	s.HourlySummary = cfg.HourlySummary

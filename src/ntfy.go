@@ -83,7 +83,7 @@ func (h *Hub) NtfyTest() string {
 	if cfg.NtfyTopic == "" {
 		return "Type a topic name first (or press Random)."
 	}
-	if err := sendNtfy(ntfyBase(cfg), cfg.NtfyTopic, "Triangulet Opener", "Phone alerts work.", "white_check_mark", 3); err != nil {
+	if err := sendNtfy(ntfyBase(cfg), cfg.NtfyTopic, "Triangulet Plus", "Phone alerts work.", "white_check_mark", 3); err != nil {
 		return "Could not send: " + err.Error()
 	}
 	return "Sent. Check the ntfy app on your phone."

@@ -46,7 +46,7 @@ func DrawPopup(c *Canvas, s Snapshot, ps *PopupState) Frame {
 	c.RoundRectStroke(Rect{0, 0, popW, popH}, 12, 1, colEdge)
 
 	c.Image(appLogo(), Rect{14, 14, 34, 34}, 9)
-	f.text(Rect{56, 12, 190, 22}, "Triangulet Opener", 15, true, colText, 0)
+	f.text(Rect{56, 12, 190, 22}, "Triangulet Plus", 15, true, colText, 0)
 	state, sc := "Idle", colMuted
 	if s.Running {
 		state, sc = fmt.Sprintf("Opening - %d/%d workers", s.WorkersRunning, s.Workers), colGood
@@ -73,7 +73,7 @@ func DrawPopup(c *Canvas, s Snapshot, ps *PopupState) Frame {
 		f.text(Rect{box.X + i*cw, box.Y + 8, cw, 14}, v.l, 9, true, colMuted, 1)
 		f.text(Rect{box.X + i*cw, box.Y + 24, cw, 26}, v.v, 16, true, colText, 1)
 	}
-	mode := map[string]string{"fixed": "Fixed capsule", "advance": "Next on Mystical", "hunt": "Mystical hunt"}[s.Mode]
+	mode := map[string]string{"fixed": "Fixed capsule", "advance": "Next on Mystical", "hunt": "Mystical hunt", "least": "Least owned", "wish": "Wishlist"}[s.Mode]
 	f.text(Rect{14, 140, popW - 28, 16}, fmt.Sprintf("%s  -  %s", mode, s.Capsule), 11, false, colDim, 0)
 
 	btn := func(id string, y int, label string, fill Col) {

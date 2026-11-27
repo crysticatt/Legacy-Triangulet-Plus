@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-const appVersion = "42"
+const appVersion = "43"
 
 var tabNames = []string{"Trians", "Stats", "Hunt", "Log", "History", "Auction", "Luck", "Wishlist"}
 
@@ -50,7 +50,7 @@ func DrawScene(c *Canvas, s Snapshot, st *UIState) Frame {
 func (p *painter) header() {
 	c, s, st := p.c, p.s, p.st
 	c.Image(appLogo(), Rect{16, 14, 40, 40}, 10)
-	p.text(Rect{66, 12, 200, 24}, "Triangulet Opener", 18, true, colText, 0)
+	p.text(Rect{66, 12, 200, 24}, "Triangulet Plus", 18, true, colText, 0)
 	statusCol, statusTxt := colMuted, s.StatusLine()
 	switch {
 	case s.Notice != "":
@@ -353,6 +353,7 @@ func (p *painter) tabs() {
 		p.viewWishlist(content)
 	}
 	p.fade(content.Inset(1, 1), colCard, from, easeOut(st.enter))
+	p.text(Rect{winW - 14 - 260, winH - 19, 260, 14}, "made by crysticat", 10, false, colDim, 2)
 	_ = s
 }
 

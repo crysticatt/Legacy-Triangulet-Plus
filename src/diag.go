@@ -10,7 +10,7 @@ import (
 // no passwords, tokens or topic names.
 func Diagnostics(s Snapshot) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "Triangulet Opener v%s (%s/%s)\n", appVersion, runtime.GOOS, runtime.GOARCH)
+	fmt.Fprintf(&b, "Triangulet Plus v%s (%s/%s)\n", appVersion, runtime.GOOS, runtime.GOARCH)
 	fmt.Fprintf(&b, "running=%v mode=%s capsule=%s workers=%d delay=%.1fms inflight=%d\n", s.Running, s.Mode, s.Capsule, s.Workers, s.DelayMs, s.InFlight)
 	fmt.Fprintf(&b, "opened=%d perMin=%d coins=%d logged-in=%v\n", s.Opened, int(s.PerMin), s.Coins, s.HasAcct)
 	fmt.Fprintf(&b, "collected=%d/%d\n", s.Collected, s.TotalTrians)

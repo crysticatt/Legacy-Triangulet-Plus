@@ -61,7 +61,7 @@ func TestScenePreview(t *testing.T) {
 		t.Skip("set PREVIEW_DIR to render previews")
 	}
 	os.MkdirAll(dir, 0o755)
-	for tab := 0; tab < 11; tab++ {
+	for tab := 0; tab < 12; tab++ {
 		applyTheme("dark")
 		st := NewUIState()
 		st.Settle = true
@@ -80,6 +80,12 @@ func TestScenePreview(t *testing.T) {
 			s.Theme = themeNames[tab-7]
 			applyTheme(s.Theme)
 			st.SetMsg = "Saved: C:\\Users\\you\\Desktop\\TrianguletOpener-backup-2026-11-20.tribackup"
+		case tab == 11: // the custom theme editor
+			st.Tab, st.Settings, st.ThemeEdit = 0, true, true
+			s.CustomThemes = []CustomTheme{{Name: "Sunset", Bg: "#201020", Card: "#301830", Accent: "#ff7a30", Text: "#ffeedd"}, {Name: "Mint", Bg: "#eaf6f0", Card: "#ffffff", Accent: "#1aa36a", Text: "#12302a"}}
+			s.Theme = "dark"
+			st.ThemeHex = map[string]string{"tbg": "#201020", "tcard": "#301830", "tacc": "#ff7a30", "ttext": "#ffeedd"}
+			st.SetMsg = "Saved \"Sunset\"."
 		case tab == 10: // the Trians tab in the light theme
 			st.Tab = 0
 			applyTheme("light")

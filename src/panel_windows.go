@@ -115,6 +115,11 @@ const (
 	ctlNtfy  = 212
 	ctlBPass = 213
 	ctlDown  = 214
+	ctlTName = 215
+	ctlTBg   = 216
+	ctlTCard = 217
+	ctlTAcc  = 218
+	ctlTText = 219
 
 	panelStyle = wsCaption | wsSysMenu | wsMinimizeBox | wsMaximizeBox | wsThickFrame | wsClipChildren
 )
@@ -181,7 +186,7 @@ func setThemeNow(name string) {
 	}
 }
 
-var editIDs = map[string]uintptr{"ntfy": ctlNtfy, "bpass": ctlBPass, "down": ctlDown, "user": ctlUser, "pass": ctlPass, "delay": ctlDelay, "search": ctlSearch, "aamount": ctlAAmount, "abid": ctlABid, "apay": ctlAPay}
+var editIDs = map[string]uintptr{"ntfy": ctlNtfy, "bpass": ctlBPass, "down": ctlDown, "tname": ctlTName, "tbg": ctlTBg, "tcard": ctlTCard, "tacc": ctlTAcc, "ttext": ctlTText, "user": ctlUser, "pass": ctlPass, "delay": ctlDelay, "search": ctlSearch, "aamount": ctlAAmount, "abid": ctlABid, "apay": ctlAPay}
 
 var (
 	panelClass = utf16Ptr("TrianguletOpenerPanel")
@@ -289,7 +294,7 @@ func createPanel() {
 	rc.Right, rc.Bottom = winW, winH
 	pAdjustWindowRect.Call(uintptr(unsafe.Pointer(&rc)), panelStyle, 0, 0)
 
-	title := utf16Ptr("Triangulet Opener")
+	title := utf16Ptr("Triangulet Plus")
 	panelHwnd, _, _ = pCreateWindowEx.Call(0, uintptr(unsafe.Pointer(panelClass)), uintptr(unsafe.Pointer(title)),
 		panelStyle, 100, 100, uintptr(rc.Right-rc.Left), uintptr(rc.Bottom-rc.Top), 0, 0, hInstance, 0)
 	runtime.KeepAlive(title)
@@ -625,11 +630,11 @@ func doToggle() {
 	}
 	applyDelay()
 	if s.Mode != "hunt" && s.Capsule == "" {
-		messageBox("Triangulet Opener", "Pick a capsule first (or switch Mode to Hunt).", mbOK|mbIconInformation)
+		messageBox("Triangulet Plus", "Pick a capsule first (or switch Mode to Hunt).", mbOK|mbIconInformation)
 		return
 	}
 	if !s.HasToken && !s.HasCreds {
-		messageBox("Triangulet Opener", "Log in first: enter your username and password and click Save and log in.", mbOK|mbIconInformation)
+		messageBox("Triangulet Plus", "Log in first: enter your username and password and click Save and log in.", mbOK|mbIconInformation)
 		return
 	}
 	hub.Start()
@@ -656,7 +661,7 @@ func atoiOr(s string, d int) int {
 
 func doAuction() {
 	if ui.Sel == "" {
-		messageBox("Triangulet Opener", "Pick a trian from the list first.", mbOK|mbIconInformation)
+		messageBox("Triangulet Plus", "Pick a trian from the list first.", mbOK|mbIconInformation)
 		return
 	}
 	amount := atoiOr(getText(edits["aamount"]), 0)
@@ -689,7 +694,7 @@ func handleClick(id string) {
 		setStartup(!startupEnabled())
 		ui.StartupOn = startupEnabled()
 	case id == "boot":
-		if !bootEnabledCached() && !messageBox2("Triangulet Opener", "This makes a Windows startup task that runs the opener with no window before you sign in.\n\nBecause the app is not code-signed, Windows Defender or other antivirus may flag it. That is a false alarm, but if it happens: restore the file in Windows Security > Protection history, then send it to Microsoft as \"I believe this file is clean\".\n\nTurn it on?", mbOKCancel|mbIconInformation) {
+		if !bootEnabledCached() && !messageBox2("Triangulet Plus", "This makes a Windows startup task that runs the opener with no window before you sign in.\n\nBecause the app is not code-signed, Windows Defender or other antivirus may flag it. That is a false alarm, but if it happens: restore the file in Windows Security > Protection history, then send it to Microsoft as \"I believe this file is clean\".\n\nTurn it on?", mbOKCancel|mbIconInformation) {
 			break
 		}
 		setBoot(!bootEnabledCached())
@@ -718,13 +723,13 @@ func handleClick(id string) {
 		hub.SetGoal(c.StopAfterMystical + 1)
 	case id == "update":
 		if s := hub.Snapshot(); !s.UpdateBusy && s.UpdateVer != "" {
-			if messageBox2("Triangulet Opener", "Install version "+s.UpdateVer+" and restart now?\n\n"+shortNotes(s.UpdateNotes), mbOKCancel|mbIconInformation) {
+			if messageBox2("Triangulet Plus", "Install version "+s.UpdateVer+" and restart now?\n\n"+shortNotes(s.UpdateNotes), mbOKCancel|mbIconInformation) {
 				hub.InstallUpdate(applyUpdate)
 			}
 		}
 	case id == "speedtest":
 		if hub.Snapshot().Running {
-			messageBox("Triangulet Opener", "Stop opening first, then run the test. It only reads from the site and spends no coins.", mbOK|mbIconInformation)
+			messageBox("Triangulet Plus", "Stop opening first, then run the test. It only reads from the site and spends no coins.", mbOK|mbIconInformation)
 		} else {
 			hub.MeasureLimits()
 		}
@@ -752,11 +757,53 @@ func handleClick(id string) {
 	case id == "openlog":
 		openPath(hub.logPath())
 	case strings.HasPrefix(id, "tab:"):
+		closeThemeEditor()
 		ui.Tab = atoiOr(id[4:], 0)
 		ui.Settings = false
 	case id == "settings":
+		closeThemeEditor()
 		ui.Settings = !ui.Settings
 		ui.SetMsg = ""
+	case id == "themeedit":
+		ui.ThemeEdit = true
+		ui.SetMsg = ""
+		loadThemeEditor("")
+	case id == "themeback":
+		closeThemeEditor()
+	case strings.HasPrefix(id, "tsel:"):
+		name := strings.TrimPrefix(id, "tsel:")
+		loadThemeEditor(name)
+		setThemeNow("custom:" + strings.ToLower(name))
+	case strings.HasPrefix(id, "tpre:"):
+		t := themes[themeNames[atoiOr(id[5:], 0)%len(themeNames)]]
+		setText(edits["tbg"], colHex(t.Bg))
+		setText(edits["tcard"], colHex(t.Card))
+		setText(edits["tacc"], colHex(t.Accent))
+		setText(edits["ttext"], colHex(t.Text))
+		previewTheme()
+	case id == "tsave":
+		ct := CustomTheme{Name: getText(edits["tname"]), Bg: getText(edits["tbg"]), Card: getText(edits["tcard"]), Accent: getText(edits["tacc"]), Text: getText(edits["ttext"])}
+		if err := hub.SaveCustomTheme(ct); err != nil {
+			ui.SetMsg = err.Error()
+		} else {
+			setThemeNow("custom:" + strings.ToLower(cleanName(ct.Name)))
+			ui.SetMsg = "Saved \"" + cleanName(ct.Name) + "\"."
+		}
+	case id == "tdel":
+		name := cleanName(getText(edits["tname"]))
+		found := false
+		for _, c := range hub.cfg().CustomThemes {
+			found = found || customKey(c.Name) == customKey(name)
+		}
+		if !found {
+			ui.SetMsg = "Pick a saved theme (or type its name) to delete it."
+		} else {
+			hub.DeleteCustomTheme(name)
+			applyTheme(hub.cfg().Theme)
+			syncThemeRefs()
+			invalidateAll()
+			ui.SetMsg = "Deleted \"" + name + "\"."
+		}
 	case strings.HasPrefix(id, "theme:"):
 		setThemeNow(themeNames[atoiOr(id[6:], 0)%len(themeNames)])
 	case id == "hourly":
@@ -796,7 +843,7 @@ func handleClick(id string) {
 			dirty = true
 		}()
 	case id == "bimport":
-		if messageBox2("Triangulet Opener", "Replace your current settings, logins and History with the newest backup file?", mbOKCancel|mbIconInformation) {
+		if messageBox2("Triangulet Plus", "Replace your current settings, logins and History with the newest backup file?", mbOKCancel|mbIconInformation) {
 			ui.SetMsg = "Working..."
 			pass := getText(edits["bpass"])
 			go func() {
@@ -954,6 +1001,8 @@ func panelWndProc(hwnd, msg, wparam, lparam uintptr) uintptr {
 				ui.moving = true
 				render()
 			}
+		case code == enChange && (id == ctlTBg || id == ctlTCard || id == ctlTAcc || id == ctlTText):
+			previewTheme()
 		case code == enChange && id == ctlSearch:
 			ui.Search = strings.ToLower(getText(edits["search"]))
 			ui.Scroll["inv"] = 0
@@ -1005,4 +1054,66 @@ func applyNtfyTopic() {
 			ui.SetMsg = m
 		}
 	}
+}
+
+func invalidateAll() {
+	for _, h := range edits {
+		pInvalidateRect.Call(h, 0, 1)
+	}
+	if panelHwnd != 0 {
+		pInvalidateRect.Call(panelHwnd, 0, 1)
+	}
+	dirty = true
+}
+
+// loadThemeEditor fills the editor boxes from a saved theme, or from the theme in use.
+func loadThemeEditor(name string) {
+	var bg, card, acc, txt, nm string
+	for _, c := range hub.cfg().CustomThemes {
+		if name != "" && customKey(c.Name) == customKey(name) {
+			nm, bg, card, acc, txt = c.Name, c.Bg, c.Card, c.Accent, c.Text
+		}
+	}
+	if nm == "" {
+		bg, card, acc, txt = colHex(colBg), colHex(colCard), colHex(colAccent), colHex(colText)
+	}
+	setText(edits["tname"], nm)
+	setText(edits["tbg"], bg)
+	setText(edits["tcard"], card)
+	setText(edits["tacc"], acc)
+	setText(edits["ttext"], txt)
+	syncThemeHex()
+}
+
+func syncThemeHex() {
+	ui.ThemeHex = map[string]string{"tbg": getText(edits["tbg"]), "tcard": getText(edits["tcard"]), "tacc": getText(edits["tacc"]), "ttext": getText(edits["ttext"])}
+	dirty = true
+}
+
+// previewTheme applies the editor colours straight away when all four are valid.
+func previewTheme() {
+	syncThemeHex()
+	ct := CustomTheme{Bg: ui.ThemeHex["tbg"], Card: ui.ThemeHex["tcard"], Accent: ui.ThemeHex["tacc"], Text: ui.ThemeHex["ttext"]}
+	bg, card, acc, txt, err := ct.colors()
+	if err != nil {
+		return
+	}
+	themesMu.Lock()
+	themes["custom:\x00preview"] = deriveTheme(bg, card, acc, txt)
+	themesMu.Unlock()
+	applyTheme("custom:\x00preview")
+	syncThemeRefs()
+	invalidateAll()
+}
+
+// closeThemeEditor leaves the editor and goes back to the saved theme (drops an unsaved preview).
+func closeThemeEditor() {
+	if !ui.ThemeEdit {
+		return
+	}
+	ui.ThemeEdit = false
+	ui.SetMsg = ""
+	applyTheme(hub.cfg().Theme)
+	syncThemeRefs()
+	invalidateAll()
 }

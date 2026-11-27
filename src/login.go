@@ -20,6 +20,30 @@ var (
 	retryEvery = 10 * time.Second
 )
 
+// loginRejected is the site saying no to the username/password. It keeps the site's own
+// words so the window shows the real reason.
+type loginRejected struct {
+	code int
+	body string // ": <what the site said>" or ""
+}
+
+func (e loginRejected) Error() string {
+	return fmt.Sprintf("rejected by the site (HTTP %d%s): wrong username or password?", e.code, e.body)
+}
+
+func (e loginRejected) Is(target error) bool { return target == errRejected }
+
+// looksLikeBadLogin tells a "wrong username or password" 403 from a plain block.
+func looksLikeBadLogin(body string) bool {
+	b := strings.ToLower(body)
+	for _, w := range []string{"password", "username", "credential", "invalid", "incorrect", "wrong", "not found", "no such user", "unauthorized"} {
+		if strings.Contains(b, w) {
+			return true
+		}
+	}
+	return false
+}
+
 // LoginRetry logs in, and when the site gives no token back it tries again every
 // retryEvery, forever. It gives up only for a wrong password or when cancel() is true.
 func (a *App) LoginRetry(cancel func() bool) error {
@@ -126,7 +150,7 @@ func (a *App) StartAsync() {
 }
 
 var loginPaths = []string{"/api/login", "/api/auth/login", "/auth/login", "/login"}
-var loginFields = []string{"name", "username"}
+var loginFields = []string{"name", "username", "user", "email"}
 
 // Login signs in with the saved username/password and stores the token it gets back.
 // The site's login endpoint isn't documented, so the usual paths are tried and the
@@ -163,9 +187,12 @@ func (a *App) Login() (err error) {
 	}
 	var tried []string
 	var notAccepted bool
+	var rej *loginRejected
+	var blocked string
+	single := len(paths) == 1 && len(fields) == 1 // an address that worked before: a "no" is a real "no"
 	for _, p := range paths {
 		for _, f := range fields {
-			status, tok, e := a.tryLogin(base+p, f, user, pass)
+			status, tok, body, e := a.tryLogin(base+p, f, user, pass)
 			if e != nil {
 				return fmt.Errorf("could not reach the site: %v", e)
 			}
@@ -188,11 +215,27 @@ func (a *App) Login() (err error) {
 				a.mu.Unlock()
 				return nil
 			}
-			if status == 401 || status == 403 {
-				return errRejected
+			switch {
+			case status == 401 || (status == 403 && looksLikeBadLogin(body)):
+				r := loginRejected{status, body}
+				if single {
+					return r
+				}
+				// the first address or field name tried may simply be the wrong one: keep looking
+				if rej == nil {
+					rej = &r
+				}
+			case status == 403:
+				blocked = fmt.Sprintf("the site refused the login (HTTP 403%s)", body)
 			}
 			tried = append(tried, fmt.Sprintf("%s:%s=%d", p, f, status))
 		}
+	}
+	if rej != nil {
+		return *rej
+	}
+	if blocked != "" {
+		return errors.New(blocked + ". It may be blocking quick repeated logins: wait a minute")
 	}
 	if notAccepted {
 		return fmt.Errorf("login returned a token but the site says it is unauthorized (%s)", strings.Join(tried, " "))
@@ -214,22 +257,22 @@ func (a *App) verifyToken() error {
 	return nil
 }
 
-func (a *App) tryLogin(url, userField, user, pass string) (status int, token string, err error) {
+func (a *App) tryLogin(url, userField, user, pass string) (status int, token string, reply string, err error) {
 	body, _ := json.Marshal(map[string]string{userField: user, "password": pass})
 	req, err := http.NewRequest("POST", url, bytes.NewReader(body))
 	if err != nil {
-		return 0, "", err
+		return 0, "", "", err
 	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := a.client.Do(req)
 	if err != nil {
-		return 0, "", err
+		return 0, "", "", err
 	}
 	defer resp.Body.Close()
 	b, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return resp.StatusCode, "", nil
+		return resp.StatusCode, "", snippet(b), nil
 	}
 	// The token may be in the JSON body, a header, or a cookie.
 	var sb strings.Builder
@@ -242,5 +285,5 @@ func (a *App) tryLogin(url, userField, user, pass string) (status int, token str
 			}
 		}
 	}
-	return resp.StatusCode, jwtRe.FindString(sb.String()), nil
+	return resp.StatusCode, jwtRe.FindString(sb.String()), "", nil
 }

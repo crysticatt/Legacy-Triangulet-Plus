@@ -13,7 +13,7 @@ import (
 
 const (
 	winW = 960
-	winH = 540
+	winH = 556
 )
 
 var (
@@ -74,15 +74,17 @@ type UIState struct {
 	ShowPass           bool
 	StartupOn, BootOn  bool
 	Tab                int
-	Settings           bool           // the Settings page is open in place of the tabs
-	SetMsg             string         // result line on the Settings page
-	TriansView         int            // 0 = owned, 1 = missing
-	HistRange          int            // History tab: 0 = 24 h, 1 = 7 days, 2 = 30 days
-	Wall               time.Time      // clock for the History tab (zero = now); previews fix it
-	Scroll             map[string]int // "inv", "auc"
-	DiagAt             float64        // when Copy diagnostics last worked (UIState.Now)
-	Sel                string         // trian picked in the Auction tab
-	Search             string         // lower-case inventory filter
+	ThemeEdit          bool              // the custom theme editor is open inside Settings
+	Settings           bool              // the Settings page is open in place of the tabs
+	ThemeHex           map[string]string // hex text of the theme editor boxes (for the colour squares)
+	SetMsg             string            // result line on the Settings page
+	TriansView         int               // 0 = owned, 1 = missing
+	HistRange          int               // History tab: 0 = 24 h, 1 = 7 days, 2 = 30 days
+	Wall               time.Time         // clock for the History tab (zero = now); previews fix it
+	Scroll             map[string]int    // "inv", "auc"
+	DiagAt             float64           // when Copy diagnostics last worked (UIState.Now)
+	Sel                string            // trian picked in the Auction tab
+	Search             string            // lower-case inventory filter
 	AucMsg             string
 	ChromaImg          *image.RGBA
 	ImgFor             func(name string) *image.RGBA
@@ -286,7 +288,9 @@ func (p *painter) seg(prefix string, r Rect, labels []string, sel int) {
 	w := float64(r.W-6) / float64(len(labels))
 	pos := p.st.num("sg:seg:"+prefix, float64(sel))
 	pill := Rect{r.X + 3 + int(pos*w+0.5), r.Y + 3, int(w), r.H - 6}
-	p.c.RoundRect(pill, 7, colAccent)
+	if sel >= 0 {
+		p.c.RoundRect(pill, 7, colAccent)
+	}
 	for i, l := range labels {
 		id := prefix + ":" + itoaInt(i)
 		cell := Rect{r.X + 3 + int(float64(i)*w), r.Y + 3, int(w), r.H - 6}

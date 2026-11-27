@@ -235,7 +235,7 @@ func newNID(hwnd uintptr) *notifyIconData {
 }
 
 func tooltip(s Snapshot) string {
-	t := "Triangulet Opener"
+	t := "Triangulet Plus"
 	if s.Running {
 		t = fmt.Sprintf("Opening - %s opened, %s/min", fmtInt(s.Opened), fmtInt(int(s.PerMin)))
 	}
@@ -277,7 +277,7 @@ func addTrayIcon(hwnd uintptr) {
 	n.UFlags = nifMessage | nifIcon | nifTip
 	n.UCallbackMessage = wmTray
 	n.HIcon = currentIcon(hub.Snapshot())
-	copyUTF16(n.SzTip[:], "Triangulet Opener")
+	copyUTF16(n.SzTip[:], "Triangulet Plus")
 	pShellNotifyIcon.Call(nimAdd, uintptr(unsafe.Pointer(n)))
 }
 
@@ -420,7 +420,7 @@ func main() {
 		if h, _, _ := pFindWindow.Call(uintptr(unsafe.Pointer(panelClass)), 0); h != 0 {
 			pPostMessage.Call(h, wmShowReq, 0, 0)
 		} else {
-			messageBox("Triangulet Opener", "Already running. Look for the Triangulet icon in the system tray (it may be under the ^ arrow).", mbOK|mbIconInformation)
+			messageBox("Triangulet Plus", "Already running. Look for the Triangulet icon in the system tray (it may be under the ^ arrow).", mbOK|mbIconInformation)
 		}
 		return
 	}
@@ -444,9 +444,9 @@ func main() {
 	wc.CbSize = uint32(unsafe.Sizeof(wc))
 	pRegisterClassEx.Call(uintptr(unsafe.Pointer(&wc)))
 	hwnd, _, _ := pCreateWindowEx.Call(0, uintptr(unsafe.Pointer(className)),
-		uintptr(unsafe.Pointer(utf16Ptr("Triangulet Opener tray"))), 0, 0, 0, 0, 0, 0, 0, hInst, 0)
+		uintptr(unsafe.Pointer(utf16Ptr("Triangulet Plus tray"))), 0, 0, 0, 0, 0, 0, 0, hInst, 0)
 	if hwnd == 0 {
-		messageBox("Triangulet Opener", "Could not create the tray window.", mbOK|mbIconWarning)
+		messageBox("Triangulet Plus", "Could not create the tray window.", mbOK|mbIconWarning)
 		return
 	}
 	trayHwnd = hwnd
@@ -468,7 +468,7 @@ func main() {
 		time.Sleep(2500 * time.Millisecond)
 		if s := hub.Snapshot(); s.WhatsNew != "" {
 			hub.DismissWhatsNew()
-			messageBox("Triangulet Opener updated to v"+appVersion, shortNotes(s.WhatsNew), mbOK|mbIconInformation)
+			messageBox("Triangulet Plus updated to v"+appVersion, shortNotes(s.WhatsNew), mbOK|mbIconInformation)
 		}
 	}()
 	go func() {

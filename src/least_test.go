@@ -78,3 +78,13 @@ func TestDashboardScriptParses(t *testing.T) {
 		t.Fatalf("dashboard script does not parse: %s", out)
 	}
 }
+
+func TestModesSurviveNormalise(t *testing.T) {
+	for _, m := range []string{"fixed", "advance", "hunt", "least", "wish"} {
+		c := Config{Mode: m}
+		c.fix()
+		if c.Mode != m {
+			t.Fatalf("mode %q became %q", m, c.Mode)
+		}
+	}
+}

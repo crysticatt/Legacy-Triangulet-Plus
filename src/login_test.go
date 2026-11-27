@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -181,5 +182,71 @@ func TestStartAsyncLogsInWhenNoToken(t *testing.T) {
 	time.Sleep(150 * time.Millisecond) // let the loop goroutine finish before the temp dir is removed
 	if atomic.LoadInt64(&opens) == 0 {
 		t.Fatalf("no opens; info=%q", a.Snapshot().Info)
+	}
+}
+
+// A "no" from the first address/field tried must not end the search when none has worked yet.
+func TestLoginKeepsLookingAfterFirstNo(t *testing.T) {
+	var opens int64
+	// the site only knows field "username": the first try ("name") answers 401
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/login" && r.Method == "POST" {
+			var b map[string]string
+			json.NewDecoder(r.Body).Decode(&b)
+			if b["username"] != "crysticat" || b["password"] != "hunter2" {
+				w.WriteHeader(401)
+				w.Write([]byte(`{"error":"Invalid username"}`))
+				return
+			}
+			json.NewEncoder(w).Encode(map[string]any{"token": testJWT})
+			return
+		}
+		_ = opens
+		w.WriteHeader(200)
+		w.Write([]byte(`{}`))
+	}))
+	defer srv.Close()
+	t.Setenv("TRIOPENER_DIR", t.TempDir())
+	a := NewApp(dataDir())
+	a.cfg.BaseURL = srv.URL
+	a.SetCredentials("crysticat", "hunter2")
+	if err := a.Login(); err != nil {
+		t.Fatalf("login: %v", err)
+	}
+	if a.cfg.LoginField != "username" {
+		t.Fatalf("remembered field %q", a.cfg.LoginField)
+	}
+}
+
+func TestLoginShowsSiteReply(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(401)
+		w.Write([]byte(`{"error":"Invalid username"}`))
+	}))
+	defer srv.Close()
+	t.Setenv("TRIOPENER_DIR", t.TempDir())
+	a := NewApp(dataDir())
+	a.cfg.BaseURL = srv.URL
+	a.SetCredentials("u", "p")
+	err := a.Login()
+	if err == nil || !errors.Is(err, errRejected) || !strings.Contains(err.Error(), "Invalid username") || !strings.Contains(err.Error(), "401") {
+		t.Fatalf("err = %v", err)
+	}
+}
+
+// A plain 403 (a block, not a bad password) is not reported as a wrong password and is retried.
+func TestLogin403BlockIsNotWrongPassword(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(403)
+		w.Write([]byte(`<html>Forbidden</html>`))
+	}))
+	defer srv.Close()
+	t.Setenv("TRIOPENER_DIR", t.TempDir())
+	a := NewApp(dataDir())
+	a.cfg.BaseURL = srv.URL
+	a.SetCredentials("u", "p")
+	err := a.Login()
+	if err == nil || errors.Is(err, errRejected) || !strings.Contains(err.Error(), "refused the login") {
+		t.Fatalf("err = %v", err)
 	}
 }

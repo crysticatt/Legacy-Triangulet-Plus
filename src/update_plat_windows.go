@@ -6,7 +6,7 @@ import "regexp"
 
 // The release file for Windows is named like TrianguletOpener-v36.exe (the installer,
 // TrianguletOpener-Setup-v36.exe, is not matched).
-var winAsset = regexp.MustCompile(`(?i)^TrianguletOpener-v[0-9.]+\.exe$`)
+var winAsset = regexp.MustCompile(`(?i)^Triangulet(Opener|Plus)-v[0-9.]+\.exe$`)
 
 var assetMatch = func(name string) bool { return winAsset.MatchString(name) }
 
