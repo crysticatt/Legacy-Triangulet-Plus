@@ -2,7 +2,7 @@
 # Effect: on this PC the exe shows a publisher name and no "unknown publisher" prompt.
 # It does NOT remove SmartScreen warnings on other people's PCs - that needs a real certificate
 # (see signing\README-signing.txt). Run PowerShell as Administrator.
-param([string]$Exe = "$PSScriptRoot\..\TrianguletOpener.exe", [string]$Name = "Triangulet Opener")
+param([string]$Exe = "$PSScriptRoot\..\TrianguletOpener.exe", [string]$Name = "Triangulet Plus")
 $ErrorActionPreference = "Stop"
 $cert = New-SelfSignedCertificate -Type CodeSigningCert -Subject "CN=$Name" -CertStoreLocation Cert:\CurrentUser\My -NotAfter (Get-Date).AddYears(3)
 foreach ($store in "Root","TrustedPublisher") {
